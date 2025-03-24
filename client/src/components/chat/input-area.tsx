@@ -40,7 +40,7 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message..."
+              placeholder="Ask me any tech question in simple words..."
               className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-3 pr-10 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary resize-none transition-colors min-h-[46px]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {

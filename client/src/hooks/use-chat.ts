@@ -22,11 +22,11 @@ export function useChat() {
       const initialMessages: Message[] = [
         {
           role: 'assistant',
-          content: "Hello! I'm TTwW Answerbot, your AI assistant. How can I help you today?"
+          content: "👋 Hello! I'm TTwW Answerbot, your friendly tech helper. I explain technology in simple, everyday words."
         },
         {
           role: 'assistant',
-          content: "You can ask me questions about any topic, and I'll do my best to provide helpful information. Try asking about technology, science, history, or anything else you're curious about!"
+          content: "You can ask me any tech questions and I'll explain them without using complicated terms. Try asking things like:\n\n• What is Bluetooth and how does it work?\n• How do I protect my online accounts?\n• What does 'the cloud' actually mean?\n• What's the difference between WiFi and cellular data?"
         }
       ];
       setMessages(initialMessages);
@@ -84,7 +84,11 @@ export function useChat() {
     const initialMessages: Message[] = [
       {
         role: 'assistant',
-        content: "Hello! I'm TTwW Answerbot, your AI assistant. How can I help you today?"
+        content: "👋 Hello! I'm TTwW Answerbot, your friendly tech helper. I explain technology in simple, everyday words."
+      },
+      {
+        role: 'assistant',
+        content: "You can ask me any tech questions and I'll explain them without using complicated terms. Try asking things like:\n\n• What is Bluetooth and how does it work?\n• How do I protect my online accounts?\n• What does 'the cloud' actually mean?\n• What's the difference between WiFi and cellular data?"
       }
     ];
     
@@ -93,7 +97,7 @@ export function useChat() {
     
     toast({
       title: "Chat cleared",
-      description: "Your chat history has been cleared"
+      description: "Your conversation history has been cleared"
     });
   };
 

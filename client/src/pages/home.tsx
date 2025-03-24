@@ -41,7 +41,7 @@ export default function Home() {
               <h1 className="font-semibold text-lg">TTwW Answerbot</h1>
               <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                 <span className="inline-block h-2 w-2 bg-green-500 rounded-full mr-1"></span>
-                <span>Online</span>
+                <span>Your friendly tech explainer</span>
               </div>
             </div>
           </div>

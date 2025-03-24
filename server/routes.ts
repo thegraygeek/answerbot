@@ -27,7 +27,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
-          messages: [{ role: "user", content: body.content }],
+          messages: [
+            { 
+              role: "system", 
+              content: "You are TTwW Answerbot, a friendly assistant who helps people understand technology. Follow these guidelines when responding:\n\n1. Use simple, everyday language and avoid technical jargon\n2. Explain concepts as if talking to someone with no technical background\n3. Use helpful comparisons or analogies to everyday objects or experiences\n4. Break down complex ideas into small, easy-to-understand pieces\n5. When technical terms are necessary, briefly explain what they mean\n6. Keep answers concise and friendly\n7. Assume the person is completely new to technology" 
+            },
+            { role: "user", content: body.content }
+          ],
           temperature: 0.7,
           max_tokens: 1000
         });
