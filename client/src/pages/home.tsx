@@ -31,16 +31,16 @@ export default function Home() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="h-8 w-8 flex items-center justify-center">
+            <div className="h-10 w-10 flex items-center justify-center">
               <img 
-                src="/images/ttww-logo-dark.svg" 
+                src="/images/ttww-logo-dark.png" 
                 alt="TTwW Logo" 
-                className="h-8 w-8 dark:hidden" 
+                className="h-10 w-auto dark:hidden" 
               />
               <img 
-                src="/images/ttww-logo-light.svg" 
+                src="/images/ttww-logo-light.png" 
                 alt="TTwW Logo" 
-                className="h-8 w-8 hidden dark:block" 
+                className="h-10 w-auto hidden dark:block" 
               />
             </div>
             <div>
