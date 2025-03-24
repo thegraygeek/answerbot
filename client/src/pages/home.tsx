@@ -31,12 +31,17 @@ export default function Home() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-white">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                <path d="M12 2a8 8 0 0 0-8 8v12h16V10a8 8 0 0 0-8-8z"></path>
-                <path d="M12 6a4 4 0 0 0-4 4v10h8V10a4 4 0 0 0-4-4z"></path>
-                <line x1="12" y1="16" x2="12" y2="19"></line>
-              </svg>
+            <div className="h-9 w-9 rounded bg-transparent flex items-center justify-center">
+              <img 
+                src="/images/ttww-logo-dark.svg" 
+                alt="TTwW Logo" 
+                className="h-8 w-8 dark:hidden" 
+              />
+              <img 
+                src="/images/ttww-logo-light.svg" 
+                alt="TTwW Logo" 
+                className="h-8 w-8 hidden dark:block" 
+              />
             </div>
             <div>
               <h1 className="font-semibold text-lg">TTwW Answerbot</h1>
