@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { messageSchema } from "@shared/schema";
+import { messageSchema, registrationSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
 
@@ -11,6 +11,38 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // API route for user registration
+  app.post("/api/register", async (req, res) => {
+    try {
+      const userData = registrationSchema.parse(req.body);
+      
+      // Check if user with email already exists
+      const existingUser = await storage.getUserByEmail(userData.email);
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: "A user with this email already exists" 
+        });
+      }
+      
+      // Create new user
+      const user = await storage.createUser(userData);
+      
+      return res.status(201).json({ 
+        message: "Registration successful",
+        userId: user.id
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid registration data", 
+          details: error.format() 
+        });
+      }
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // API route for getting AI response
   app.post("/api/chat", async (req, res) => {
     try {

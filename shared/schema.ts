@@ -1,16 +1,19 @@
-import { pgTable, text, serial, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+  firstName: true,
+  lastName: true,
+  email: true,
 });
 
 export const chatMessages = pgTable("chat_messages", {
@@ -38,3 +41,11 @@ export type User = typeof users.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type Message = z.infer<typeof messageSchema>;
+
+export const registrationSchema = z.object({
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
+  email: z.string().email({ message: "Invalid email address" }),
+});
+
+export type RegistrationData = z.infer<typeof registrationSchema>;
