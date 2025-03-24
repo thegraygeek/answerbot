@@ -31,12 +31,12 @@ export default function Home() {
       <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 px-4 py-3 shadow-sm transition-colors">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="h-10 w-10 flex items-center justify-center relative">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" className="h-8 w-8 dark:hidden">
-                <path d="M25 5C16 5 10 9 8 20h2c1-9 8-12 15-12s14 3 15 12h2c-2-11-8-15-17-15zm-12 16c-1 8 2 12 4 13s5 0 8-2c3 2 5 3 8 2s5-5 4-13h-2c0 7-1 9-3 10s-5-1-7-3c-2 2-5 4-7 3s-3-3-3-10h-2zm5-7c-2 0-3 1-3 3s1 3 3 3 3-1 3-3-1-3-3-3zm14 0c-2 0-3 1-3 3s1 3 3 3 3-1 3-3-1-3-3-3zm-14 2c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1zm14 0c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1zm-14 14c-2 0-4 2-4 5s2 5 4 5 4-2 4-5-2-5-4-5zm0 2c1 0 2 1 2 3s-1 3-2 3-2-1-2-3 1-3 2-3zm0 1c-1 0-1 1-1 2s0 2 1 2 1-1 1-2-0-2-1-2zm-15-1h5v1h-5v-1zm25 0h5v1h-5v-1z" fill="black"/>
-              </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" className="h-8 w-8 hidden dark:block">
-                <path d="M25 5C16 5 10 9 8 20h2c1-9 8-12 15-12s14 3 15 12h2c-2-11-8-15-17-15zm-12 16c-1 8 2 12 4 13s5 0 8-2c3 2 5 3 8 2s5-5 4-13h-2c0 7-1 9-3 10s-5-1-7-3c-2 2-5 4-7 3s-3-3-3-10h-2zm5-7c-2 0-3 1-3 3s1 3 3 3 3-1 3-3-1-3-3-3zm14 0c-2 0-3 1-3 3s1 3 3 3 3-1 3-3-1-3-3-3zm-14 2c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1zm14 0c.5 0 1 .5 1 1s-.5 1-1 1-1-.5-1-1 .5-1 1-1zm-14 14c-2 0-4 2-4 5s2 5 4 5 4-2 4-5-2-5-4-5zm0 2c1 0 2 1 2 3s-1 3-2 3-2-1-2-3 1-3 2-3zm0 1c-1 0-1 1-1 2s0 2 1 2 1-1 1-2-0-2-1-2zm-15-1h5v1h-5v-1zm25 0h5v1h-5v-1z" fill="white"/>
+            <div className="flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="h-6 w-6 text-gray-900 dark:text-white">
+                <path d="M10 2C5 2 3 5 2 9h1c0-3 3-5 7-5s7 2 7 5h1c-1-4-3-7-8-7zM4 9c0 3 1 4 2 5s2 1 4 0c2 1 3 1 4 0s2-2 2-5h-1c0 3 0 3-1 4s-2-1-3-2c-1 1-2 2-3 2s-1-1-1-4h-1z" fill="currentColor" />
+                <circle cx="7" cy="6" r="1" fill="currentColor" />
+                <circle cx="13" cy="6" r="1" fill="currentColor" />
+                <path d="M7 13c-1 0-2 1-2 3s1 3 2 3 2-1 2-3-1-3-2-3zm-3 3h3M14 16h3" stroke="currentColor" strokeWidth="1" />
               </svg>
             </div>
             <div>
