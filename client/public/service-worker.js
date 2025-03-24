@@ -6,7 +6,10 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/logo.svg'
+  '/ttww-logo-dark.png',
+  '/ttww-logo-light.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png'
 ];
 
 // Install a service worker

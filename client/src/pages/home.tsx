@@ -33,12 +33,12 @@ export default function Home() {
           <div className="flex items-center space-x-2">
             <div className="h-10 w-10 flex items-center justify-center">
               <img 
-                src="/images/ttww-logo-dark.png" 
+                src="/ttww-logo-dark.png" 
                 alt="TTwW Logo" 
                 className="h-10 w-auto dark:hidden" 
               />
               <img 
-                src="/images/ttww-logo-light.png" 
+                src="/ttww-logo-light.png" 
                 alt="TTwW Logo" 
                 className="h-10 w-auto hidden dark:block" 
               />
