@@ -22,11 +22,11 @@ export function useChat() {
       const initialMessages: Message[] = [
         {
           role: 'assistant',
-          content: "👋 Hello! I'm TTwW Answerbot, your friendly tech helper. I explain technology in simple, everyday words."
+          content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
         },
         {
           role: 'assistant',
-          content: "You can ask me any tech questions and I'll explain them without using complicated terms. Try asking things like:\n\n• What is Bluetooth and how does it work?\n• How do I protect my online accounts?\n• What does 'the cloud' actually mean?\n• What's the difference between WiFi and cellular data?"
+          content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
         }
       ];
       setMessages(initialMessages);
@@ -84,11 +84,11 @@ export function useChat() {
     const initialMessages: Message[] = [
       {
         role: 'assistant',
-        content: "👋 Hello! I'm TTwW Answerbot, your friendly tech helper. I explain technology in simple, everyday words."
+        content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
       },
       {
         role: 'assistant',
-        content: "You can ask me any tech questions and I'll explain them without using complicated terms. Try asking things like:\n\n• What is Bluetooth and how does it work?\n• How do I protect my online accounts?\n• What does 'the cloud' actually mean?\n• What's the difference between WiFi and cellular data?"
+        content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
       }
     ];
     
