@@ -1,0 +1,106 @@
+import { useState, useEffect } from 'react';
+import { Message } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+
+export function useChat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
+
+  // Load initial messages from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chatMessages');
+    if (savedMessages) {
+      try {
+        setMessages(JSON.parse(savedMessages));
+      } catch (error) {
+        console.error('Failed to load chat history:', error);
+      }
+    } else {
+      // Add welcome message if no history
+      const initialMessages: Message[] = [
+        {
+          role: 'assistant',
+          content: "Hello! I'm TTwW Answerbot, your AI assistant. How can I help you today?"
+        },
+        {
+          role: 'assistant',
+          content: "You can ask me questions about any topic, and I'll do my best to provide helpful information. Try asking about technology, science, history, or anything else you're curious about!"
+        }
+      ];
+      setMessages(initialMessages);
+      localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
+    }
+  }, []);
+
+  // Save messages to localStorage when they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  // Function to send a message and get a response
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
+    // Add user message
+    const userMessage: Message = { role: 'user', content };
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    try {
+      // Call API
+      const response = await apiRequest('POST', '/api/chat', userMessage);
+      const data = await response.json();
+      
+      // Add bot response after a small delay to simulate typing
+      setTimeout(() => {
+        setMessages(prev => [...prev, data]);
+        setIsTyping(false);
+      }, 500);
+    } catch (error) {
+      console.error('Error getting response:', error);
+      setIsTyping(false);
+      
+      // Add error message from bot
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: "I'm sorry, I couldn't process your request. Please try again or check your internet connection."
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      
+      toast({
+        title: "Error",
+        description: "Failed to get response from the server",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Clear chat history
+  const clearChat = () => {
+    const initialMessages: Message[] = [
+      {
+        role: 'assistant',
+        content: "Hello! I'm TTwW Answerbot, your AI assistant. How can I help you today?"
+      }
+    ];
+    
+    setMessages(initialMessages);
+    localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
+    
+    toast({
+      title: "Chat cleared",
+      description: "Your chat history has been cleared"
+    });
+  };
+
+  return {
+    messages,
+    isTyping,
+    sendMessage,
+    clearChat
+  };
+}
