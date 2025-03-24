@@ -47,11 +47,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: "assistant", 
           content: aiResponse 
         });
-      } catch (openaiError) {
+      } catch (error) {
+        const openaiError = error as Error;
         console.error("OpenAI API error:", openaiError);
         return res.status(500).json({ 
           message: "Error from OpenAI API", 
-          details: openaiError.message 
+          details: openaiError.message || "Unknown error occurred"
         });
       }
     } catch (error) {

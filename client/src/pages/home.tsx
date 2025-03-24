@@ -10,7 +10,8 @@ export default function Home() {
   const { 
     messages, 
     isTyping, 
-    sendMessage 
+    sendMessage,
+    clearChat 
   } = useChat();
   
   const { showInstallPrompt, installApp } = usePwa();
@@ -46,7 +47,16 @@ export default function Home() {
             </div>
           </div>
           
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={clearChat}
+              className="text-sm px-3 py-1 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors"
+              aria-label="Start a new chat"
+            >
+              New Chat
+            </button>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
