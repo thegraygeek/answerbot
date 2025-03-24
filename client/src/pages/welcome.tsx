@@ -66,12 +66,12 @@ export default function Welcome() {
         <div className="max-w-md mx-auto flex items-center justify-center">
           <div className="h-12 w-12 flex items-center justify-center mr-3">
             <img 
-              src="/images/ttww-logo-dark.png" 
+              src="/ttww-logo-dark.png" 
               alt="TTwW Logo" 
               className="h-12 w-auto dark:hidden" 
             />
             <img 
-              src="/images/ttww-logo-light.png" 
+              src="/ttww-logo-light.png" 
               alt="TTwW Logo" 
               className="h-12 w-auto hidden dark:block" 
             />
