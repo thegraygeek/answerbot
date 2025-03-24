@@ -46,7 +46,7 @@ export default function Welcome() {
       });
 
       // Navigate to the main chat page
-      navigate('/');
+      navigate('/chat');
     } catch (error) {
       console.error('Registration error:', error);
       toast({

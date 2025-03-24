@@ -10,8 +10,8 @@ import { ThemeProvider } from "./hooks/use-theme";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/welcome" component={Welcome} />
+      <Route path="/" component={Welcome} />
+      <Route path="/chat" component={Home} />
       <Route component={NotFound} />
     </Switch>
   );
