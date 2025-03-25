@@ -35,7 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = registrationSchema.parse(req.body);
       
-      // Check if user with email already exists
+      // Check if user with email already exists (case insensitive)
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
         // If user exists already, log them in instead of showing an error
@@ -44,6 +44,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.session.email = existingUser.email;
           req.session.firstName = existingUser.firstName;
           req.session.isLoggedIn = true;
+          
+          // Force save the session to ensure it persists
+          await new Promise<void>((resolve, reject) => {
+            req.session.save(err => {
+              if (err) reject(err);
+              else resolve();
+            });
+          });
           
           return res.status(200).json({ 
             message: "Welcome back!",
@@ -67,6 +75,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session.email = user.email;
         req.session.firstName = user.firstName;
         req.session.isLoggedIn = true;
+        
+        // Force save the session to ensure it persists
+        await new Promise<void>((resolve, reject) => {
+          req.session.save(err => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
       }
       
       return res.status(201).json({ 
@@ -100,6 +116,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json({
         isLoggedIn: false
       });
+    }
+  });
+  
+  // API route for logging out
+  app.post("/api/logout", (req, res) => {
+    if (req.session) {
+      req.session.destroy(err => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to log out" });
+        }
+        
+        res.clearCookie('connect.sid'); // Clear the session cookie
+        return res.json({ message: "Logged out successfully" });
+      });
+    } else {
+      return res.json({ message: "Not logged in" });
     }
   });
 

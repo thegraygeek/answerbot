@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { registrationSchema, type RegistrationData } from '@shared/schema';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useTheme } from '@/hooks/use-theme';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,24 @@ export default function Welcome() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const { theme } = useTheme();
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [savedData, setSavedData] = useState<Partial<RegistrationData> | null>(null);
+
+  // Try to load saved form data from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedFormData = localStorage.getItem('registration_form_data');
+      if (savedFormData) {
+        const parsed = JSON.parse(savedFormData);
+        setSavedData(parsed);
+        form.reset(parsed);
+      }
+    } catch (e) {
+      console.error('Error loading saved form data:', e);
+    }
+    setInitialLoad(false);
+  }, []);
 
   const form = useForm<RegistrationData>({
     resolver: zodResolver(registrationSchema),
@@ -30,6 +49,16 @@ export default function Welcome() {
       email: '',
     },
   });
+
+  // Save form data to localStorage when values change
+  useEffect(() => {
+    if (!initialLoad) {
+      const currentValues = form.getValues();
+      if (currentValues.firstName || currentValues.lastName || currentValues.email) {
+        localStorage.setItem('registration_form_data', JSON.stringify(currentValues));
+      }
+    }
+  }, [form.watch(), initialLoad]);
 
   async function onSubmit(data: RegistrationData) {
     setIsSubmitting(true);
@@ -48,6 +77,9 @@ export default function Welcome() {
 
       // Invalidate the auth status query to force a refresh
       queryClient.invalidateQueries({ queryKey: ['/api/auth/status'] });
+
+      // Clear saved form data from localStorage on successful registration
+      localStorage.removeItem('registration_form_data');
 
       toast({
         title: 'Registration successful!',
@@ -71,76 +103,108 @@ export default function Welcome() {
     }
   }
 
+  // Use the proper logo based on theme
+  const logoSrc = theme === 'dark' ? '/ttww-logo-dark.png' : '/ttww-logo-light.png';
+
   return (
-    <div style={{backgroundColor: 'white', color: 'black', padding: '20px', minHeight: '100vh'}}>
-      <h1 style={{color: 'black', fontSize: '24px', fontWeight: 'bold', textAlign: 'center'}}>TTwW Answerbot</h1>
-      
-      <div style={{marginTop: '40px', maxWidth: '400px', margin: '0 auto', padding: '20px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)'}}>
-        <h2 style={{textAlign: 'center', fontSize: '20px', marginBottom: '20px'}}>Welcome!</h2>
-        <p style={{textAlign: 'center', marginBottom: '20px', color: '#666'}}>
-          Register to start using TTwW Answerbot - your friendly tech guide
-        </p>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-primary/5 to-background">
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        {/* Logo and Header */}
+        <div className="mb-8 text-center">
+          <img 
+            src={logoSrc} 
+            alt="TTwW Logo" 
+            className="mx-auto w-48 h-auto mb-6"
+          />
+          <h1 className="text-3xl font-bold text-primary">TTwW Answerbot</h1>
+          <p className="mt-2 text-muted-foreground">Your personal AI tech assistant</p>
+        </div>
+        
+        {/* Registration Card */}
+        <div className="w-full max-w-md bg-card rounded-xl shadow-lg border border-border p-6">
+          <h2 className="text-xl font-semibold text-center mb-6">Create Your Account</h2>
+          
+          {savedData && (
+            <div className="mb-6 p-3 bg-primary/10 rounded-lg text-sm">
+              <p className="font-medium">Welcome back!</p>
+              <p className="text-muted-foreground">We've restored your previous information.</p>
+            </div>
+          )}
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="John" 
+                        {...field} 
+                        className="bg-background"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Doe" 
+                        {...field} 
+                        className="bg-background"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="email" 
+                        placeholder="john.doe@example.com" 
+                        {...field} 
+                        className="bg-background"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="john.doe@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <Button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="w-full py-5"
+              >
+                {isSubmitting ? 'Registering...' : 'Register'}
+              </Button>
+            </form>
+          </Form>
 
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              style={{marginTop: '10px'}}
-            >
-              {isSubmitting ? 'Registering...' : 'Register'}
-            </Button>
-          </form>
-        </Form>
-
-        <div style={{marginTop: '20px', fontSize: '12px', textAlign: 'center', color: '#666'}}>
-          By registering, you agree to receive tech tips and information from TTwW.
+          <div className="mt-6 text-xs text-center text-muted-foreground">
+            By registering, you agree to receive tech tips and information from TTwW.
+          </div>
         </div>
       </div>
 
-      <footer style={{marginTop: '40px', textAlign: 'center', fontSize: '14px', color: '#666'}}>
+      <footer className="py-4 text-center text-sm text-muted-foreground">
         &copy; {new Date().getFullYear()} Teaching the Way We Learn. All rights reserved.
       </footer>
     </div>
