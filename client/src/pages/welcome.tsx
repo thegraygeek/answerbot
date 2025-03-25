@@ -28,6 +28,14 @@ export default function Welcome() {
 
   // Try to load saved form data from localStorage on component mount
   useEffect(() => {
+    // Check if user is already logged in
+    apiRequest('/api/auth/status').then(status => {
+      if (status.isLoggedIn) {
+        navigate('/chat');
+        return;
+      }
+    });
+
     try {
       const savedFormData = localStorage.getItem('registration_form_data');
       if (savedFormData) {
@@ -86,11 +94,17 @@ export default function Welcome() {
         description: `Welcome to TTwW Answerbot, ${response.firstName || 'user'}!`,
       });
 
-      // Small delay to ensure the auth status is updated
-      setTimeout(() => {
-        // Navigate to the main chat page
+      // Check auth status and navigate
+      const authCheck = await apiRequest('/api/auth/status');
+      if (authCheck.isLoggedIn) {
         navigate('/chat');
-      }, 500);
+      } else {
+        toast({
+          title: 'Navigation error',
+          description: 'Please try logging in again',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
       console.error('Registration error:', error);
       toast({
