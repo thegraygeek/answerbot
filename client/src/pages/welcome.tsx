@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { registrationSchema, type RegistrationData } from '@shared/schema';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
@@ -46,13 +46,19 @@ export default function Welcome() {
         body: JSON.stringify(data)
       });
 
+      // Invalidate the auth status query to force a refresh
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/status'] });
+
       toast({
         title: 'Registration successful!',
         description: `Welcome to TTwW Answerbot, ${response.firstName || 'user'}!`,
       });
 
-      // Navigate to the main chat page
-      navigate('/chat');
+      // Small delay to ensure the auth status is updated
+      setTimeout(() => {
+        // Navigate to the main chat page
+        navigate('/chat');
+      }, 500);
     } catch (error) {
       console.error('Registration error:', error);
       toast({

@@ -13,14 +13,16 @@ const SessionStore = MemoryStore(session);
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "ttw-answerbot-secret",
-    resave: false,
+    resave: true,
     saveUninitialized: false,
     store: new SessionStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     }),
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      sameSite: 'lax'
     }
   })
 );
