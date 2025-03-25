@@ -34,7 +34,14 @@ export default function Welcome() {
   async function onSubmit(data: RegistrationData) {
     setIsSubmitting(true);
     try {
-      const response = await apiRequest('/api/register', {
+      interface RegisterResponse {
+        message: string;
+        userId: number;
+        firstName: string;
+        isLoggedIn: boolean;
+      }
+      
+      const response = await apiRequest<RegisterResponse>('/api/register', {
         method: 'POST',
         body: JSON.stringify(data)
       });

@@ -40,9 +40,11 @@ function useAuth() {
     isLoading: true
   });
   
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AuthStatus>({
     queryKey: ['/api/auth/status'],
-    queryFn: () => apiRequest('/api/auth/status', { method: "GET" }),
+    queryFn: async () => {
+      return apiRequest<AuthStatus>('/api/auth/status', { method: "GET" });
+    },
   });
   
   useEffect(() => {
@@ -50,7 +52,7 @@ function useAuth() {
       setAuthStatus({
         ...data,
         isLoading: false
-      } as AuthStatus);
+      });
     }
   }, [data, isLoading]);
   
