@@ -7,6 +7,8 @@ import Home from "@/pages/home";
 import Welcome from "@/pages/welcome";
 import { ThemeProvider } from "./hooks/use-theme";
 import { useState, useEffect } from "react";
+import { usePwa } from "./hooks/use-pwa";
+import InstallPrompt from "./components/pwa/install-prompt";
 
 // Auth context interface
 interface AuthStatus {
@@ -105,11 +107,28 @@ function Router() {
   );
 }
 
+// PWA Install Prompt Component
+function PwaInstallPrompt() {
+  const { showInstallPrompt, installApp, hideInstallPrompt, isInstalled } = usePwa();
+  
+  if (isInstalled || !showInstallPrompt) {
+    return null;
+  }
+  
+  return (
+    <InstallPrompt 
+      onInstall={installApp} 
+      onDismiss={hideInstallPrompt}
+    />
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <Router />
+        <PwaInstallPrompt />
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
