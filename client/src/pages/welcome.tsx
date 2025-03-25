@@ -34,15 +34,14 @@ export default function Welcome() {
   async function onSubmit(data: RegistrationData) {
     setIsSubmitting(true);
     try {
-      await apiRequest(
-        'POST',
-        '/api/register',
-        data
-      );
+      const response = await apiRequest('/api/register', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
 
       toast({
         title: 'Registration successful!',
-        description: 'Welcome to TTwW Answerbot!',
+        description: `Welcome to TTwW Answerbot, ${response.firstName || 'user'}!`,
       });
 
       // Navigate to the main chat page

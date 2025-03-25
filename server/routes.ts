@@ -20,6 +20,15 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 // Create OpenAI client
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.session && req.session.isLoggedIn) {
+    next();
+  } else {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // API route for user registration
   app.post("/api/register", async (req, res) => {
@@ -29,17 +38,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user with email already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
-        return res.status(400).json({ 
-          message: "A user with this email already exists" 
-        });
+        // If user exists already, log them in instead of showing an error
+        if (req.session) {
+          req.session.userId = existingUser.id;
+          req.session.email = existingUser.email;
+          req.session.firstName = existingUser.firstName;
+          req.session.isLoggedIn = true;
+          
+          return res.status(200).json({ 
+            message: "Welcome back!",
+            userId: existingUser.id,
+            firstName: existingUser.firstName,
+            isLoggedIn: true
+          });
+        } else {
+          return res.status(400).json({ 
+            message: "A user with this email already exists" 
+          });
+        }
       }
       
       // Create new user
       const user = await storage.createUser(userData);
       
+      // Store user info in session
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.email = user.email;
+        req.session.firstName = user.firstName;
+        req.session.isLoggedIn = true;
+      }
+      
       return res.status(201).json({ 
         message: "Registration successful",
-        userId: user.id
+        userId: user.id,
+        firstName: user.firstName,
+        isLoggedIn: true
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -53,8 +87,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API route for getting AI response
-  app.post("/api/chat", async (req, res) => {
+  // API route to check authentication status
+  app.get("/api/auth/status", (req, res) => {
+    if (req.session && req.session.isLoggedIn) {
+      return res.json({
+        isLoggedIn: true,
+        userId: req.session.userId,
+        firstName: req.session.firstName,
+        email: req.session.email
+      });
+    } else {
+      return res.json({
+        isLoggedIn: false
+      });
+    }
+  });
+
+  // API route for getting AI response - protected by auth
+  app.post("/api/chat", isAuthenticated, async (req, res) => {
     try {
       const body = messageSchema.parse(req.body);
       
