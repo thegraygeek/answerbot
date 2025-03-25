@@ -1,6 +1,11 @@
-const { createCanvas, loadImage } = require('canvas');
-const fs = require('fs');
-const path = require('path');
+import { createCanvas, loadImage } from 'canvas';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the directory name properly in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function createPng(pngPath, width, height) {
   try {
