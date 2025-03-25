@@ -1,9 +1,19 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { messageSchema, registrationSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
 import OpenAI from "openai";
+
+// Extend Express Request type to include session
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    email?: string;
+    firstName?: string;
+    isLoggedIn?: boolean;
+  }
+}
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || "";
 
