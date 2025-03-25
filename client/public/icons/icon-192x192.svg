@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
   <!-- Background Circle -->
-  <circle cx="96" cy="96" r="96" fill="#1e293b"/>
+  <circle cx="96" cy="96" r="96" fill="#000000"/>
   
   <!-- TTwW Logo - White version -->
   <g transform="translate(40, 30) scale(0.23)">
