@@ -20,6 +20,62 @@ interface AuthStatus {
   isLoading: boolean;
 }
 
+// Create auth context
+const AuthContext = createContext<AuthStatus>({
+  isLoggedIn: false,
+  isLoading: true
+});
+
+// Auth provider component
+function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [authState, setAuthState] = useState<AuthStatus>({
+    isLoggedIn: false,
+    isLoading: true
+  });
+
+  useEffect(() => {
+    // Check auth status on mount
+    apiRequest('/api/auth/status')
+      .then(status => {
+        setAuthState({
+          ...status,
+          isLoading: false
+        });
+      })
+      .catch(() => {
+        setAuthState(prev => ({ ...prev, isLoading: false }));
+      });
+  }, []);
+
+  return (
+    <AuthContext.Provider value={authState}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// Protected route component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const auth = useContext(AuthContext);
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!auth.isLoading && !auth.isLoggedIn) {
+      navigate('/welcome');
+    }
+  }, [auth.isLoading, auth.isLoggedIn]);
+
+  if (auth.isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+
+  return auth.isLoggedIn ? <>{children}</> : null;
+}
+
 interface AuthContextType extends AuthStatus {
   refreshAuth: () => void;
   logout: () => Promise<void>;
@@ -209,6 +265,33 @@ function PwaInstallPrompt() {
       onInstall={installApp} 
       onDismiss={hideInstallPrompt}
     />
+  );
+}
+
+function Router() {
+  const auth = useContext(AuthContext);
+  const [location] = useLocation();
+
+  // Redirect to chat if logged in and trying to access welcome
+  useEffect(() => {
+    if (auth.isLoggedIn && location === '/welcome') {
+      navigate('/chat');
+    }
+  }, [auth.isLoggedIn, location]);
+
+  return (
+    <Switch>
+      <Route path="/welcome" component={Welcome} />
+      <Route path="/chat">
+        <ProtectedRoute>
+          <Home />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/">
+        <Redirect to={auth.isLoggedIn ? '/chat' : '/welcome'} />
+      </Route>
+      <Route component={NotFound} />
+    </Switch>
   );
 }
 
