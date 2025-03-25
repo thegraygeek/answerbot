@@ -40,11 +40,13 @@ function useAuth() {
     isLoading: true
   });
   
-  const { data, isLoading } = useQuery<AuthStatus>({
+  const { data, isLoading, refetch } = useQuery<AuthStatus>({
     queryKey: ['/api/auth/status'],
     queryFn: async () => {
       return apiRequest<AuthStatus>('/api/auth/status', { method: "GET" });
     },
+    staleTime: 10000, // Refresh after 10 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
   
   useEffect(() => {
@@ -53,22 +55,42 @@ function useAuth() {
         ...data,
         isLoading: false
       });
+    } else if (!isLoading) {
+      setAuthStatus(prev => ({
+        ...prev,
+        isLoading: false
+      }));
     }
   }, [data, isLoading]);
+
+  // Function to allow manual refresh of auth status
+  const refreshAuth = () => {
+    refetch();
+  };
   
-  return authStatus;
+  return {
+    ...authStatus,
+    refreshAuth
+  };
 }
 
 function Router() {
   const { isLoggedIn, isLoading } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   
   // If user is on home page and is logged in, redirect to chat
   useEffect(() => {
     if (!isLoading && isLoggedIn && location === "/") {
-      window.location.href = "/chat";
+      setLocation("/chat");
     }
-  }, [isLoggedIn, isLoading, location]);
+  }, [isLoggedIn, isLoading, location, setLocation]);
+  
+  // If user is on chat page and is not logged in, redirect to home
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn && location === "/chat") {
+      setLocation("/");
+    }
+  }, [isLoggedIn, isLoading, location, setLocation]);
   
   if (isLoading) {
     return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
@@ -76,10 +98,8 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/" component={Welcome} />
-      <Route path="/chat">
-        <AuthenticatedRoute component={Home} path="/chat" />
-      </Route>
+      <Route path="/" component={isLoggedIn ? () => <Redirect to="/chat" /> : Welcome} />
+      <Route path="/chat" component={isLoggedIn ? Home : () => <Redirect to="/" />} />
       <Route component={NotFound} />
     </Switch>
   );
