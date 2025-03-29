@@ -1,5 +1,5 @@
 // Cache name with version
-const CACHE_NAME = 'answerbot-cache-v1';
+const CACHE_NAME = 'ttw-cache-v2';
 
 // Files to cache
 const urlsToCache = [
@@ -30,7 +30,7 @@ self.addEventListener('fetch', event => {
       event.request.url.includes('/api/')) {
     return;
   }
-  
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
