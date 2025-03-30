@@ -1,9 +1,9 @@
 
-const CACHE_NAME = 'ttw-cache-v10';
-const RUNTIME_CACHE = 'ttw-runtime-v10';
+const CACHE_NAME = 'ttw-cache-v11';
+const RUNTIME_CACHE = 'ttw-runtime-v11';
 
-// Handle offline navigation
-self.addEventListener('navigate', event => {
+// Handle offline mode and network errors
+self.addEventListener('fetch', event => {
   if (!navigator.onLine) {
     event.respondWith(
       caches.match('/offline.html')
