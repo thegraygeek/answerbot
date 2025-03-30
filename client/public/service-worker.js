@@ -1,5 +1,5 @@
-const CACHE_NAME = 'ttw-cache-v4';
-const RUNTIME_CACHE = 'ttw-runtime-v4';
+const CACHE_NAME = 'ttw-cache-v5';
+const RUNTIME_CACHE = 'ttw-runtime-v5';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -8,8 +8,18 @@ const STATIC_RESOURCES = [
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
   '/src/main.tsx',
-  '/src/styles.css'
+  '/src/styles.css',
+  '/welcome'
 ];
+
+// Cache first, then network strategy
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
+      .catch(() => caches.match('/offline.html'))
+  );
+});
 
 // Offline fallback page
 const OFFLINE_PAGE = '/offline.html';
