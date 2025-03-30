@@ -25,119 +25,60 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 // Create OpenAI client
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Middleware to check if user is authenticated
-const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  if (req.session && req.session.isLoggedIn) {
-    next();
-  } else {
-    res.status(401).json({ message: "Unauthorized" });
+// Function to ensure session has messages initialized
+const ensureSessionMessages = (req: Request) => {
+  // Initialize the session if needed
+  if (!req.session.messages || req.session.messages.length === 0) {
+    // Create welcome message
+    const welcomeMessage = {
+      role: 'assistant',
+      content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
+    };
+    
+    // Initialize messages with welcome message
+    req.session.messages = [welcomeMessage];
   }
+  
+  return req.session.messages;
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // API route for user registration
-  app.post("/api/register", async (req, res) => {
-    try {
-      const userData = registrationSchema.parse(req.body);
-      
-      // Check if user with email already exists
-      const existingUser = await storage.getUserByEmail(userData.email);
-      if (existingUser) {
-        // If user exists already, log them in instead of showing an error
-        if (req.session) {
-          // Create welcome back message
-          const welcomeMessage = {
-            role: 'assistant',
-            content: `Welcome back, ${existingUser.firstName}! How can I help you with technology today?`
-          };
-          
-          req.session.userId = existingUser.id;
-          req.session.email = existingUser.email;
-          req.session.firstName = existingUser.firstName;
-          req.session.isLoggedIn = true;
-          req.session.messages = [welcomeMessage];
-          
-          return res.status(200).json({ 
-            message: "Welcome back!",
-            userId: existingUser.id,
-            firstName: existingUser.firstName,
-            isLoggedIn: true
-          });
-        } else {
-          return res.status(400).json({ 
-            message: "A user with this email already exists" 
-          });
-        }
-      }
-      
-      // Create new user
-      const user = await storage.createUser(userData);
-      
-      // Store user info in session
-      if (req.session) {
-        // Create welcome message
-        const welcomeMessage = {
-          role: 'assistant',
-          content: `Welcome, ${user.firstName}! I'm the TTwW Answerbot. I provide clear tech answers in 50 words or less. What can I help you with today?`
-        };
-        
-        req.session.userId = user.id;
-        req.session.email = user.email;
-        req.session.firstName = user.firstName;
-        req.session.isLoggedIn = true;
-        req.session.messages = [welcomeMessage];
-      }
-      
-      return res.status(201).json({ 
-        message: "Registration successful",
-        userId: user.id,
-        firstName: user.firstName,
-        isLoggedIn: true
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid registration data", 
-          details: error.format() 
-        });
-      }
-      return res.status(500).json({ message: "Internal server error" });
+  // Initialization middleware to ensure all sessions have chat initialized
+  app.use((req, res, next) => {
+    if (req.session) {
+      ensureSessionMessages(req);
     }
+    next();
   });
 
-  // API route to check authentication status
+  // API route to provide authentication status compatibility
   app.get("/api/auth/status", (req, res) => {
-    if (req.session && req.session.isLoggedIn) {
-      return res.json({
-        isLoggedIn: true,
-        userId: req.session.userId,
-        firstName: req.session.firstName,
-        email: req.session.email
-      });
-    } else {
-      return res.json({
-        isLoggedIn: false
-      });
-    }
+    // Auto-initialize session and return a default authenticated state
+    // This ensures compatibility with any remaining auth checks in the frontend
+    return res.json({
+      isLoggedIn: true,
+      userId: 1,
+      firstName: "User"
+    });
   });
 
-  // Get chat history
-  app.get("/api/chat/history", isAuthenticated, (req, res) => {
-    if (req.session && req.session.messages) {
-      return res.json({ messages: req.session.messages });
+  // Get chat history - no authentication required
+  app.get("/api/chat/history", (req, res) => {
+    if (req.session) {
+      const messages = ensureSessionMessages(req);
+      return res.json({ messages });
     } else {
-      return res.json({ messages: [] });
+      return res.status(500).json({ message: "Session initialization failed" });
     }
   });
   
-  // Clear chat history and start new chat
-  app.post("/api/chat/clear", isAuthenticated, (req, res) => {
+  // Clear chat history and start new chat - no authentication required
+  app.post("/api/chat/clear", (req, res) => {
     if (req.session) {
       // Create welcome message
       const welcomeMessage = {
         role: 'assistant',
-        content: `Hello ${req.session.firstName || 'there'}! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
+        content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
       };
       
       // Reset messages to just the welcome message
@@ -152,8 +93,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // API route for getting AI response - protected by auth
-  app.post("/api/chat", isAuthenticated, async (req, res) => {
+  // API route for getting AI response - no authentication required
+  app.post("/api/chat", async (req, res) => {
     try {
       const body = messageSchema.parse(req.body);
       
