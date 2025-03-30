@@ -95,7 +95,7 @@ export default function Home() {
           </div>
           <h2 className="text-xl font-semibold mb-2">Welcome to TTwW Answerbot</h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-md mb-6">
-            Ask me any technology question, and I'll provide clear explanations designed for adult learners.
+            Ask me any technology question for concise explanations in 50 words or less.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
             <Button 
