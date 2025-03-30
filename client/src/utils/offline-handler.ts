@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { queryClient } from '../lib/query';
+import { queryClient } from '../lib/query-client';
 
 interface OfflineStore {
   isOnline: boolean;
