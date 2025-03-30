@@ -75,15 +75,26 @@ self.addEventListener('fetch', event => {
   if (event.request.url.includes('/api/')) {
     return event.respondWith(
       fetch(event.request)
-        .catch(() => {
-          return caches.match('/offline.html') ||
-            new Response(JSON.stringify({ error: 'You are offline', status: 'error' }), {
-              status: 503,
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response;
+        })
+        .catch((error) => {
+          console.error('API request failed:', error);
+          return new Response(
+            JSON.stringify({ 
+              error: navigator.onLine ? 'Service unavailable' : 'You are offline', 
+              status: 'error' 
+            }), {
+              status: navigator.onLine ? 500 : 503,
               headers: { 
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-store'
               }
-            });
+            }
+          );
         })
     );
   }
