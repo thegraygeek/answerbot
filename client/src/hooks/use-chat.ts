@@ -65,7 +65,10 @@ export function useChat() {
           resolve();
         }, 500);
         
-        return () => clearTimeout(timeoutId);
+        // Cleanup if component unmounts during timeout
+        if (timeoutId) {
+          return () => clearTimeout(timeoutId);
+        }
       });
     } catch (error) {
       console.error('Failed to send message:', error);

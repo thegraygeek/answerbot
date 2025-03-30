@@ -15,9 +15,9 @@ const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
     return (
       <main className="flex-1 overflow-y-auto px-4 py-4" ref={ref}>
         <div className="max-w-3xl mx-auto">
-          {visibleMessages.map((message, index) => (
+          {visibleMessages.map((message) => (
             <ChatMessage 
-              key={index}
+              key={`${message.role}-${message.content.substring(0, 20)}`}
               role={message.role}
               content={message.content}
             />
