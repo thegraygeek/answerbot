@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Volume, VolumeX } from "lucide-react";
+import { useVoiceContext } from "@/hooks/use-voice-context";
+import { Button } from "@/components/ui/button";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -9,6 +11,32 @@ interface ChatMessageProps {
 
 export default function ChatMessage({ role, content }: ChatMessageProps) {
   const isUser = useMemo(() => role === 'user', [role]);
+  const { speak, isSpeechEnabled, hasSpeechSupport, isSpeaking } = useVoiceContext();
+  
+  // Auto-speak assistant messages if speech is enabled
+  useEffect(() => {
+    if (!isUser && isSpeechEnabled && content && hasSpeechSupport) {
+      // Small delay to ensure the message is fully rendered
+      const timer = setTimeout(() => {
+        speak(content);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isUser, isSpeechEnabled, content, speak, hasSpeechSupport]);
+
+  // Function to handle speaking the message on demand
+  const handleSpeak = () => {
+    if (hasSpeechSupport && content) {
+      speak(content);
+    }
+  };
+  
+  // Get plain text content from markdown for speaking
+  const plainTextContent = content.replace(/#+\s/g, '')
+                                 .replace(/\*\*/g, '')
+                                 .replace(/\*/g, '')
+                                 .replace(/```[\s\S]*?```/g, 'code block');
   
   return (
     <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}>
@@ -25,7 +53,7 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
             ? 'bg-primary text-white dark:bg-primary/90'
             : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100'
           } 
-          rounded-lg px-4 py-3 max-w-[85%] md:max-w-[75%] shadow-sm
+          rounded-lg px-4 py-3 max-w-[85%] md:max-w-[75%] shadow-sm relative
         `}
       >
         {isUser ? (
@@ -33,11 +61,32 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
             {content}
           </div>
         ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <ReactMarkdown>
-              {content}
-            </ReactMarkdown>
-          </div>
+          <>
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown>
+                {content}
+              </ReactMarkdown>
+            </div>
+            
+            {/* Text-to-speech button for assistant messages */}
+            {hasSpeechSupport && !isUser && (
+              <div className="absolute top-1 right-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 rounded-full opacity-70 hover:opacity-100 bg-transparent text-gray-500 dark:text-gray-400"
+                  onClick={handleSpeak}
+                  aria-label="Read message aloud"
+                >
+                  {isSpeaking ? (
+                    <VolumeX className="h-3.5 w-3.5" />
+                  ) : (
+                    <Volume className="h-3.5 w-3.5" />
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
       

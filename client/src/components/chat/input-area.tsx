@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { X, Send, HelpCircle } from "lucide-react";
+import { X, Send, HelpCircle, Mic, MicOff } from "lucide-react";
+import { useVoiceContext } from "@/hooks/use-voice-context";
 
 interface InputAreaProps {
   onSendMessage: (message: string) => void;
@@ -10,6 +11,12 @@ interface InputAreaProps {
 export default function InputArea({ onSendMessage }: InputAreaProps) {
   const [message, setMessage] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { 
+    isListening, 
+    startListening, 
+    stopListening, 
+    hasRecognitionSupport 
+  } = useVoiceContext();
   
   // Auto-resize the textarea
   useEffect(() => {
@@ -18,6 +25,32 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [message]);
+  
+  // Listen for speech recognition results
+  useEffect(() => {
+    if (hasRecognitionSupport) {
+      const handleSpeechResult = (event: any) => {
+        const current = event.resultIndex;
+        const transcript = event.results[current][0].transcript;
+        setMessage(prev => prev + transcript);
+      };
+      
+      // Set up the SpeechRecognition API
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onresult = handleSpeechResult;
+        
+        return () => {
+          recognition.onresult = null;
+        };
+      }
+    }
+  }, [hasRecognitionSupport]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +62,14 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
+    }
+  };
+  
+  const toggleMicrophone = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
     }
   };
   
@@ -73,9 +114,33 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
           </div>
           
           <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Press <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd> to send, <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Shift + Enter</kbd> for new line
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Press <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd> to send
+              </p>
+              
+              {/* Voice input button */}
+              {hasRecognitionSupport && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className={`h-8 w-8 rounded-full ${
+                    isListening 
+                      ? 'bg-red-100 text-red-500 border-red-300 dark:bg-red-900 dark:text-red-400 dark:border-red-700 animate-pulse' 
+                      : 'bg-gray-100 dark:bg-gray-700'
+                  }`}
+                  onClick={toggleMicrophone}
+                  aria-label={isListening ? "Stop dictation" : "Start dictation"}
+                >
+                  {isListening ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
             
             <Button
               type="submit"
