@@ -101,9 +101,16 @@ app.use((req, res, next) => {
     }
   });
 
-  // Setup Vite in development mode
-  // This is crucial for serving the React app correctly
-  await setupVite(app, server);
+  // Check if we're in production mode
+  if (process.env.NODE_ENV === 'production') {
+    // Serve static files in production
+    log('Running in production mode - serving static files');
+    serveStatic(app);
+  } else {
+    // Setup Vite for development
+    log('Running in development mode - using Vite middleware');
+    await setupVite(app, server);
+  }
   
   // Adding a health check endpoint
   app.get('/health', (req, res) => {
