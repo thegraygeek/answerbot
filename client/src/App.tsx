@@ -29,7 +29,7 @@ function PwaInstallPrompt() {
 // Voice Controls Component
 function VoiceControls() {
   return (
-    <div className="fixed sm:bottom-28 bottom-24 sm:right-6 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed sm:bottom-24 bottom-20 sm:right-6 right-3 z-40 shadow-lg rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-2">
       <VoiceToggle />
     </div>
   );
