@@ -1,6 +1,9 @@
 
-const CACHE_NAME = 'ttw-cache-v8';
-const RUNTIME_CACHE = 'ttw-runtime-v8';
+const CACHE_NAME = 'ttw-cache-v9';
+const RUNTIME_CACHE = 'ttw-runtime-v9';
+
+// Cache expiration duration (24 hours)
+const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -23,9 +26,36 @@ self.addEventListener('install', event => {
   );
 });
 
+function cleanExpiredCache() {
+  const now = Date.now();
+  return caches.keys().then(cacheNames => {
+    return Promise.all(
+      cacheNames.map(cacheName => {
+        return caches.open(cacheName).then(cache => {
+          return cache.keys().then(requests => {
+            return Promise.all(
+              requests.map(request => {
+                return cache.match(request).then(response => {
+                  if (response && response.headers.get('date')) {
+                    const date = new Date(response.headers.get('date')).getTime();
+                    if (now - date > CACHE_EXPIRATION) {
+                      return cache.delete(request);
+                    }
+                  }
+                });
+              })
+            );
+          });
+        });
+      })
+    );
+  });
+}
+
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    Promise.all([
+      caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
