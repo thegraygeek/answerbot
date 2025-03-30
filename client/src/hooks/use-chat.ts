@@ -50,10 +50,8 @@ export function useChat() {
       // Get bot response
       const response = await apiRequest<Message>('/api/chat', {
         method: 'POST',
-        body: { message: content }
+        body: JSON.stringify({ content })
       });
-
-      const data = await response.json();
 
       // Add bot response after a small delay to simulate typing
       const timeoutPromise = new Promise<void>((resolve) => {
