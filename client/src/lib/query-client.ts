@@ -6,8 +6,13 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 60 * 1000,
       retry: (failureCount, error) => {
-        if (error instanceof Error && error.message.includes('Unauthorized')) {
-          return false;
+        if (error instanceof Error) {
+          // Don't retry auth errors or timeout errors
+          if (error.message.includes('Unauthorized') || 
+              error.message.includes('timeout') ||
+              error.message.includes('Network Error')) {
+            return false;
+          }
         }
         return failureCount < 3;
       },

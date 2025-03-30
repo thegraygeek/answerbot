@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Store user info in session with error handling
       if (!req.session) {
-        throw new Error("Session not initialized");
+        throw new Error("Session middleware not properly initialized. Check session configuration.");
       }
       
       req.session.userId = user.id;
