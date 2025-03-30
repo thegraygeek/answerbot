@@ -170,9 +170,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           max_tokens: 1000
         }),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('OpenAI API timeout')), 30000)
+          setTimeout(() => reject(new Error('OpenAI API request timed out after 30 seconds')), 30000)
         )
-      ]) as OpenAI.Chat.Completions.ChatCompletion;
+      ]).catch(error => {
+        if (error.message.includes('timed out')) {
+          throw new Error('The request took too long to complete. Please try again.');
+        }
+        throw error;
+      }) as OpenAI.Chat.Completions.ChatCompletion;
 
         const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
 
