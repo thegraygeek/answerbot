@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import { Bot, User } from "lucide-react";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -9,37 +11,39 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
   const isUser = useMemo(() => role === 'user', [role]);
   
   return (
-    <div className={`mb-4 flex ${isUser ? 'justify-end' : ''}`}>
+    <div className={`flex items-start gap-3 ${isUser ? 'justify-end' : ''}`}>
       {!isUser && (
-        <div className="h-9 w-9 rounded-full bg-primary flex-shrink-0 flex items-center justify-center text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M12 2a8 8 0 0 0-8 8v12h16V10a8 8 0 0 0-8-8z"></path>
-            <path d="M12 6a4 4 0 0 0-4 4v10h8V10a4 4 0 0 0-4-4z"></path>
-            <line x1="12" y1="16" x2="12" y2="19"></line>
-          </svg>
+        <div className="h-9 w-9 rounded-full bg-primary/90 flex-shrink-0 flex items-center justify-center text-white">
+          <Bot className="h-5 w-5" />
         </div>
       )}
       
-      <div className={`${isUser ? 'mr-3' : 'ml-3'} ${
-        isUser 
-          ? 'bg-primary text-white'
-          : 'bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700'
-        } rounded-lg px-4 py-2 max-w-[80%] shadow-sm`}>
-        <div className="text-sm whitespace-pre-wrap">
-          {content.split('\n').map((line, i) => (
-            <p key={i} className={i > 0 ? 'mt-2' : ''}>
-              {line}
-            </p>
-          ))}
-        </div>
+      <div 
+        className={`
+          ${isUser ? 'order-1' : ''} 
+          ${isUser 
+            ? 'bg-primary text-white dark:bg-primary/90'
+            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100'
+          } 
+          rounded-lg px-4 py-3 max-w-[85%] md:max-w-[75%] shadow-sm
+        `}
+      >
+        {isUser ? (
+          <div className="text-sm whitespace-pre-wrap">
+            {content}
+          </div>
+        ) : (
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown>
+              {content}
+            </ReactMarkdown>
+          </div>
+        )}
       </div>
       
       {isUser && (
         <div className="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0 flex items-center justify-center text-gray-600 dark:text-gray-300">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
+          <User className="h-5 w-5" />
         </div>
       )}
     </div>

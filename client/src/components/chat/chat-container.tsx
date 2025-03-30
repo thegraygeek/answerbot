@@ -11,8 +11,11 @@ interface ChatContainerProps {
 const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
   ({ messages, isTyping }, ref) => {
     return (
-      <main className="flex-1 overflow-y-auto px-4 py-4" ref={ref}>
-        <div className="max-w-3xl mx-auto">
+      <main 
+        className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" 
+        ref={ref}
+      >
+        <div className="max-w-3xl mx-auto space-y-4">
           {messages.map((message, index) => (
             <ChatMessage 
               key={index}
@@ -22,6 +25,9 @@ const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
           ))}
           
           {isTyping && <TypingIndicator />}
+          
+          {/* Spacer for better scrolling to bottom */}
+          <div className="h-4" />
         </div>
       </main>
     );

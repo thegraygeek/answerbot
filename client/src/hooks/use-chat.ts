@@ -1,53 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Message } from '@shared/schema';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 export function useChat() {
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const { toast } = useToast();
 
-  // Load initial messages from localStorage
-  useEffect(() => {
-    const savedMessages = localStorage.getItem('chatMessages');
-    if (savedMessages) {
-      try {
-        setMessages(JSON.parse(savedMessages));
-      } catch (error) {
-        console.error('Failed to load chat history:', error);
-      }
-    } else {
-      // Add welcome message if no history
-      const initialMessages: Message[] = [
-        {
-          role: 'assistant',
-          content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
-        },
-        {
-          role: 'assistant',
-          content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
-        }
-      ];
-      setMessages(initialMessages);
-      localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
-    }
-  }, []);
-
-  // Save messages to localStorage when they change
-  useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('chatMessages', JSON.stringify(messages));
-    }
-  }, [messages]);
+  // Fetch chat history from server
+  const { data, isLoading, refetch } = useQuery<{ messages: Message[] }>({
+    queryKey: ['chat-history'],
+    queryFn: async () => {
+      return await apiRequest<{ messages: Message[] }>('/api/chat/history', { 
+        method: 'GET',
+        on401: 'returnNull'
+      });
+    },
+    initialData: { messages: [] },
+    staleTime: 30000, // 30 seconds
+  });
+  
+  // Messages from server or empty array if loading/error
+  const messages = data?.messages || [];
 
   // Function to send a message and get a response
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    // Add user message
+    // Add user message optimistically to the UI
     const userMessage: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMessage]);
+    queryClient.setQueryData(['chat-history'], (oldData: any) => ({
+      messages: [...(oldData?.messages || []), userMessage],
+    }));
+    
     setIsTyping(true);
 
     try {
@@ -57,21 +43,26 @@ export function useChat() {
         body: JSON.stringify(userMessage)
       });
       
-      // Add bot response after a small delay to simulate typing
+      // Refresh chat history to get latest messages
+      await refetch();
+      
+      // Stop typing indicator after a small delay
       setTimeout(() => {
-        setMessages(prev => [...prev, data]);
         setIsTyping(false);
-      }, 500);
+      }, 300);
     } catch (error) {
       console.error('Error getting response:', error);
       setIsTyping(false);
       
-      // Add error message from bot
+      // Add error message from bot optimistically
       const errorMessage: Message = {
         role: 'assistant',
         content: "I'm sorry, I couldn't process your request. Please try again or check your internet connection."
       };
-      setMessages(prev => [...prev, errorMessage]);
+      
+      queryClient.setQueryData(['chat-history'], (oldData: any) => ({
+        messages: [...(oldData?.messages || []), errorMessage],
+      }));
       
       toast({
         title: "Error",
@@ -81,32 +72,39 @@ export function useChat() {
     }
   };
 
-  // Clear chat history
-  const clearChat = () => {
-    const initialMessages: Message[] = [
-      {
-        role: 'assistant',
-        content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
-      },
-      {
-        role: 'assistant',
-        content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
-      }
-    ];
-    
-    setMessages(initialMessages);
-    localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
-    
-    toast({
-      title: "Chat cleared",
-      description: "Your conversation history has been cleared"
-    });
+  // Clear chat mutation
+  const clearChatMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest<{ messages: Message[] }>('/api/chat/clear', { 
+        method: 'POST'
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['chat-history'], { messages: data.messages });
+      toast({
+        title: "New Chat Started",
+        description: "Your conversation has been reset",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to start a new chat",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Start a new chat by clearing history
+  const newChat = () => {
+    clearChatMutation.mutate();
   };
 
   return {
     messages,
     isTyping,
+    isLoading,
     sendMessage,
-    clearChat
+    newChat
   };
 }

@@ -7,7 +7,10 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({
+  theme: 'system',
+  setTheme: () => {}
+});
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -15,17 +18,24 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Get from localStorage or default to 'system'
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    return savedTheme || 'system';
+    if (typeof window !== 'undefined') {
+      // Get from localStorage or default to 'system'
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      return savedTheme || 'system';
+    }
+    return 'system';
   });
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+    }
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const root = document.documentElement;
     
     // Handle system preference
@@ -42,13 +52,15 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (metaThemeColor) {
       metaThemeColor.setAttribute(
         'content',
-        root.classList.contains('dark') ? '#111827' : '#4F46E5'
+        root.classList.contains('dark') ? '#111827' : '#1e293b'
       );
     }
   }, [theme]);
 
   // Listen for system preference changes
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     
     const handleChange = () => {
@@ -59,7 +71,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
         // Update meta theme-color
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
         if (metaThemeColor) {
-          metaThemeColor.setAttribute('content', prefersDark ? '#111827' : '#4F46E5');
+          metaThemeColor.setAttribute('content', prefersDark ? '#111827' : '#1e293b');
         }
       }
     };
@@ -77,8 +89,5 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
   return context;
 }

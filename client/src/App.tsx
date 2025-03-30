@@ -6,9 +6,9 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Welcome from "@/pages/welcome";
 import { ThemeProvider } from "./hooks/use-theme";
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { usePwa } from "./hooks/use-pwa";
-import InstallPrompt from "./components/pwa/install-prompt";
+import InstallPromptComponent from "./components/pwa/install-prompt";
 
 // Auth context interface
 interface AuthStatus {
@@ -17,26 +17,18 @@ interface AuthStatus {
   firstName?: string;
   email?: string;
   isLoading: boolean;
+  refreshAuth?: () => void;
 }
 
-function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
-  const { isLoggedIn, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-  
-  useEffect(() => {
-    if (!isLoading && !isLoggedIn) {
-      setLocation("/");
-    }
-  }, [isLoggedIn, isLoading, setLocation]);
-  
-  if (isLoading) {
-    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
-  }
-  
-  return isLoggedIn ? <Component {...rest} /> : null;
-}
+// Create auth context
+const AuthContext = createContext<AuthStatus>({
+  isLoggedIn: false,
+  isLoading: true
+});
 
-function useAuth() {
+// Auth context already created above
+
+function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authStatus, setAuthStatus] = useState<AuthStatus>({
     isLoggedIn: false,
     isLoading: true
@@ -55,25 +47,44 @@ function useAuth() {
     if (!isLoading && data) {
       setAuthStatus({
         ...data,
-        isLoading: false
+        isLoading: false,
+        refreshAuth: refetch
       });
     } else if (!isLoading) {
       setAuthStatus(prev => ({
         ...prev,
-        isLoading: false
+        isLoading: false,
+        refreshAuth: refetch
       }));
     }
-  }, [data, isLoading]);
+  }, [data, isLoading, refetch]);
 
-  // Function to allow manual refresh of auth status
-  const refreshAuth = () => {
-    refetch();
-  };
+  return (
+    <AuthContext.Provider value={authStatus}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function useAuth() {
+  return useContext(AuthContext);
+}
+
+function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
   
-  return {
-    ...authStatus,
-    refreshAuth
-  };
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn) {
+      setLocation("/");
+    }
+  }, [isLoggedIn, isLoading, setLocation]);
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
+  }
+  
+  return isLoggedIn ? <Component {...rest} /> : null;
 }
 
 function Router() {
@@ -116,7 +127,7 @@ function PwaInstallPrompt() {
   }
   
   return (
-    <InstallPrompt 
+    <InstallPromptComponent 
       onInstall={installApp} 
       onDismiss={hideInstallPrompt}
     />
@@ -127,9 +138,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <Router />
-        <PwaInstallPrompt />
-        <Toaster />
+        <AuthProvider>
+          <Router />
+          <PwaInstallPrompt />
+          <Toaster />
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

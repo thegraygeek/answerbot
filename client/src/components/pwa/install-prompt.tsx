@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useTheme } from '@/hooks/use-theme';
 
 interface InstallPromptProps {
   onInstall: () => void;
@@ -10,6 +9,7 @@ interface InstallPromptProps {
 export default function InstallPrompt({ onInstall, onDismiss }: InstallPromptProps) {
   const [animated, setAnimated] = useState(false);
   const [minimized, setMinimized] = useState(false);
+  const { theme } = useTheme();
   
   // Start animation after component mounts
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function InstallPrompt({ onInstall, onDismiss }: InstallPromptPro
       {/* Full prompt */}
       {!minimized && (
         <div className={`fixed z-50 inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${animated ? 'opacity-100' : 'opacity-0'}`}
-            onClick={(e) => e.target === e.currentTarget && toggleMinimized()}>
+             onClick={(e) => e.target === e.currentTarget && toggleMinimized()}>
           <div className={`fixed max-w-md w-11/12 left-1/2 top-1/2 transform -translate-x-1/2 ${animated ? '-translate-y-1/2 scale-100' : 'translate-y-full scale-95'} transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden`}>
             {/* Header */}
             <div className="relative h-24 bg-primary text-white flex items-center justify-center">
@@ -52,7 +52,10 @@ export default function InstallPrompt({ onInstall, onDismiss }: InstallPromptPro
                 className="absolute right-2 top-2 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                 aria-label="Close"
               >
-                <X size={16} />
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
               </button>
               
               <div className="text-center">
@@ -107,12 +110,12 @@ export default function InstallPrompt({ onInstall, onDismiss }: InstallPromptPro
                   </ol>
                 </div>
               ) : (
-                <Button 
+                <button 
                   onClick={onInstall}
-                  className="w-full py-5 text-base font-medium bg-primary hover:bg-primary/90 transition-colors"
+                  className="w-full py-5 text-base font-medium bg-primary hover:bg-primary/90 transition-colors text-white rounded-md"
                 >
                   Install Answerbot Now
-                </Button>
+                </button>
               )}
               
               <button 

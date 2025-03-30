@@ -7,9 +7,14 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Extended RequestInit with our custom options
+interface ExtendedRequestInit extends RequestInit {
+  on401?: "returnNull" | "throw";
+}
+
 export async function apiRequest<T = any>(
   url: string,
-  options?: RequestInit,
+  options?: ExtendedRequestInit,
 ): Promise<T> {
   const res = await fetch(url, {
     ...options,
@@ -19,6 +24,11 @@ export async function apiRequest<T = any>(
     },
     credentials: "include",
   });
+
+  // Handle 401 based on the custom option
+  if (options?.on401 === "returnNull" && res.status === 401) {
+    return null as T;
+  }
 
   await throwIfResNotOk(res);
   return res.json() as Promise<T>;
@@ -48,7 +58,7 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
+      staleTime: 60000, // 1 minute instead of Infinity to refresh occasionally
       retry: false,
     },
     mutations: {
