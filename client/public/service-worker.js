@@ -20,6 +20,11 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Special handling for welcome page - bypass cache
+  if (event.request.url.includes('/welcome')) {
+    return event.respondWith(fetch(event.request));
+  }
+
   if (!event.request.url.startsWith(self.location.origin) || 
       event.request.url.includes('/api/')) {
     return;
