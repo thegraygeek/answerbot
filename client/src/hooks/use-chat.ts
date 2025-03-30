@@ -34,83 +34,46 @@ export function useChat() {
     }
   }, []);
 
-  // Save messages to localStorage when they change
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('chatMessages', JSON.stringify(messages));
-    }
+    localStorage.setItem('chatMessages', JSON.stringify(messages));
   }, [messages]);
 
-  // Function to send a message and get a response
   const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
-
-    // Add user message
-    const userMessage: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMessage]);
-    setIsTyping(true);
-
     try {
-      // Call API
-      const data = await apiRequest<Message>('/api/chat', {
+      setIsTyping(true);
+
+      // Add user message
+      const userMessage: Message = { role: 'user', content };
+      setMessages(prev => [...prev, userMessage]);
+
+      // Get bot response
+      const response = await apiRequest<Message>('/api/chat', {
         method: 'POST',
-        body: JSON.stringify(userMessage)
+        body: { message: content }
       });
-      
+
+      const data = await response.json();
+
       // Add bot response after a small delay to simulate typing
-      let timeoutId: NodeJS.Timeout;
-      const timeout = new Promise<void>((resolve) => {
-        timeoutId = setTimeout(() => {
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
           setMessages(prev => [...prev, data]);
           setIsTyping(false);
           resolve();
         }, 500);
       });
 
-      await timeout;
-      clearTimeout(timeoutId!);
-      }, 500);
-
-      // Cleanup function
-      const cleanup = () => clearTimeout(timeout);
-      return cleanup;
+      await timeoutPromise;
     } catch (error) {
-      console.error('Error getting response:', error);
-      setIsTyping(false);
-      
-      // Add error message from bot
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: error instanceof Response && error.status === 401 
-          ? "Your session has expired. Please log in again."
-          : "I'm sorry, I couldn't process your request. Please try again."
-      };
-      setMessages(prev => [...prev, errorMessage]);
-      
-      // Handle different types of errors
-      let errorDescription = "Failed to get response from the server";
-      if (error instanceof Error) {
-        errorDescription = error.message;
-      } else if (error instanceof Response) {
-        switch (error.status) {
-          case 401:
-            errorDescription = "Session expired - redirecting to login";
-            setTimeout(() => window.location.href = '/', 2000);
-            break;
-          case 429:
-            errorDescription = "Too many requests, please wait a moment";
-            break;
-          case 500:
-            errorDescription = "Server error, please try again later";
-            break;
-        }
-      }
-      
+      console.error('Failed to send message:', error);
       toast({
         title: "Error",
-        description: errorDescription,
+        description: "Failed to send message. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -126,10 +89,10 @@ export function useChat() {
         content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
       }
     ];
-    
+
     setMessages(initialMessages);
     localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
-    
+
     toast({
       title: "Chat cleared",
       description: "Your conversation history has been cleared"
