@@ -1,86 +1,50 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>TTwW Icon Generator</title>
+    <title>App Icon Generator</title>
     <style>
         body {
-            margin: 20px;
-            font-family: system-ui;
-            background: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            background-color: white;
         }
-        .preview {
-            display: flex;
-            gap: 20px;
-            margin: 20px 0;
-        }
+        
         .icon-container {
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 512px;
+            height: 512px;
             background-color: #1e293b;
-            border-radius: 25%;
+            border-radius: 50%;
             overflow: hidden;
+            box-sizing: border-box;
         }
+        
         .icon-192 {
             width: 192px;
             height: 192px;
         }
+        
         .icon-512 {
             width: 512px;
             height: 512px;
         }
+        
         .icon-image {
-            width: 70%;
+            width: 75%;
             height: auto;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            cursor: pointer;
+            filter: brightness(0) invert(1);
         }
     </style>
 </head>
 <body>
-    <h1>TTwW Icon Preview</h1>
-    <div class="preview">
-        <div>
-            <h3>512x512</h3>
-            <div class="icon-container icon-512" id="icon-512">
-                <img src="../attached_assets/TTwW Logo v4 White.png" class="icon-image" />
-            </div>
-            <button onclick="downloadIcon(512)">Download 512x512</button>
-        </div>
-        <div>
-            <h3>192x192</h3>
-            <div class="icon-container icon-192" id="icon-192">
-                <img src="../attached_assets/TTwW Logo v4 White.png" class="icon-image" />
-            </div>
-            <button onclick="downloadIcon(192)">Download 192x192</button>
-        </div>
+    <div class="icon-container icon-512" id="icon-512">
+        <img src="../attached_assets/TTwW Logo v4.png" class="icon-image" />
     </div>
-
-    <script>
-        function downloadIcon(size) {
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d');
-            
-            // Draw container
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(0, 0, size, size);
-            
-            // Draw logo
-            const container = document.querySelector(`.icon-${size}`);
-            ctx.drawImage(container, 0, 0, size, size);
-            
-            // Download
-            const a = document.createElement('a');
-            a.href = canvas.toDataURL('image/png');
-            a.download = `icon-${size}x${size}.png`;
-            a.click();
-        }
-    </script>
+    
+    <div class="icon-container icon-192" id="icon-192" style="margin-top: 20px;">
+        <img src="../attached_assets/TTwW Logo v4.png" class="icon-image" />
+    </div>
 </body>
 </html>
