@@ -10,23 +10,37 @@ export function useChat() {
 
   // Fetch chat history from server
   const { data, isLoading, refetch } = useQuery<{ messages: Message[] }>({
-    queryKey: ['chat-history'],
+    queryKey: ['/api/chat/history'],  // Use the actual API path as the query key
     queryFn: async () => {
-      const response = await apiRequest<{ messages: Message[] }>('/api/chat/history', { 
-        method: 'GET',
-        on401: 'returnNull'
-      });
-      
-      // Initialize with welcome message if no messages exist
-      if (!response || !response.messages || response.messages.length === 0) {
+      console.log("Fetching chat history");
+      try {
+        const response = await apiRequest<{ messages: Message[] }>('/api/chat/history', { 
+          method: 'GET',
+          on401: 'returnNull'
+        });
+        
+        console.log("Chat history response:", response);
+        
+        // Initialize with welcome message if no messages exist
+        if (!response || !response.messages || response.messages.length === 0) {
+          console.log("No messages found, creating welcome message");
+          const welcomeMessage: Message = { 
+            role: 'assistant', 
+            content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?` 
+          };
+          return { messages: [welcomeMessage] };
+        }
+        
+        return response;
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+        // Provide a default response on error
         const welcomeMessage: Message = { 
           role: 'assistant', 
           content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?` 
         };
         return { messages: [welcomeMessage] };
       }
-      
-      return response;
     },
     initialData: { messages: [] },
     staleTime: 30000, // 30 seconds
@@ -44,9 +58,9 @@ export function useChat() {
     // Add user message optimistically to the UI
     const userMessage: Message = { role: 'user', content };
     console.log("Current message history before update:", 
-      queryClient.getQueryData(['chat-history']));
+      queryClient.getQueryData(['/api/chat/history']));
     
-    queryClient.setQueryData(['chat-history'], (oldData: any) => {
+    queryClient.setQueryData(['/api/chat/history'], (oldData: any) => {
       console.log("Old data in update:", oldData);
       return {
         messages: [...(oldData?.messages || []), userMessage],
@@ -54,7 +68,7 @@ export function useChat() {
     });
     
     console.log("Updated message history:", 
-      queryClient.getQueryData(['chat-history']));
+      queryClient.getQueryData(['/api/chat/history']));
     
     setIsTyping(true);
 
@@ -73,7 +87,7 @@ export function useChat() {
         console.log("Adding assistant response to history:", assistantResponse);
         
         // Update the message history in the query cache
-        queryClient.setQueryData(['chat-history'], (oldData: any) => {
+        queryClient.setQueryData(['/api/chat/history'], (oldData: any) => {
           const oldMessages = oldData?.messages || [];
           console.log("Previous messages:", oldMessages);
           
@@ -87,7 +101,7 @@ export function useChat() {
       }
       
       console.log("Chat history after adding response:", 
-        queryClient.getQueryData(['chat-history']));
+        queryClient.getQueryData(['/api/chat/history']));
       
       // Stop typing indicator after a small delay
       setTimeout(() => {
@@ -103,7 +117,7 @@ export function useChat() {
         content: "I'm sorry, I couldn't process your request. Please try again or check your internet connection."
       };
       
-      queryClient.setQueryData(['chat-history'], (oldData: any) => ({
+      queryClient.setQueryData(['/api/chat/history'], (oldData: any) => ({
         messages: [...(oldData?.messages || []), errorMessage],
       }));
       
@@ -123,7 +137,7 @@ export function useChat() {
       });
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['chat-history'], { messages: data.messages });
+      queryClient.setQueryData(['/api/chat/history'], { messages: data.messages });
       toast({
         title: "New Chat Started",
         description: "Your conversation has been reset",
