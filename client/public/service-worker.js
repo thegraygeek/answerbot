@@ -1,6 +1,6 @@
 
-const CACHE_NAME = 'ttw-cache-v7';
-const RUNTIME_CACHE = 'ttw-runtime-v7';
+const CACHE_NAME = 'ttw-cache-v8';
+const RUNTIME_CACHE = 'ttw-runtime-v8';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -47,11 +47,21 @@ self.addEventListener('fetch', event => {
       fetch(event.request)
         .catch(() => {
           return caches.match('/offline.html') ||
-            new Response(JSON.stringify({ error: 'You are offline' }), {
+            new Response(JSON.stringify({ error: 'You are offline', status: 'error' }), {
               status: 503,
-              headers: { 'Content-Type': 'application/json' }
+              headers: { 
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store'
+              }
             });
         })
+    );
+  }
+
+  if (event.request.mode === 'navigate') {
+    return event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match('/offline.html'))
     );
   }
 
