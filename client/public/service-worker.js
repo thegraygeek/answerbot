@@ -1,6 +1,11 @@
-// Cache names
-const CACHE_NAME = 'ttw-cache-v1';
-const RUNTIME_CACHE = 'runtime-cache';
+
+// Cache names with versioning
+const CACHE_VERSION = 'v1';
+const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
+const API_CACHE = `api-cache-${CACHE_VERSION}`;
+
+// Resources to cache
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -13,102 +18,107 @@ const STATIC_RESOURCES = [
 // Install event
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then(cache => cache.addAll(STATIC_RESOURCES))
       .then(() => self.skipWaiting())
       .catch(error => console.error('Cache installation failed:', error))
   );
 });
 
-// Activate event
+// Activate event - cleanup old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     Promise.all([
-      caches.keys()
-        .then(cacheNames => {
-          return Promise.all(
-            cacheNames.map(cacheName => {
-              if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-                return caches.delete(cacheName);
-              }
-            })
-          );
-        }),
+      caches.keys().then(keys => Promise.all(
+        keys.map(key => {
+          if (!key.includes(CACHE_VERSION)) {
+            return caches.delete(key);
+          }
+        })
+      )),
       clients.claim()
     ])
   );
 });
 
+// Helper function for network-first strategy
+async function networkFirst(request, cacheName) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+      return response;
+    }
+    throw new Error('Network response was not ok');
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
 // Fetch event
 self.addEventListener('fetch', event => {
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
+  const { request } = event;
 
-  // API requests
-  if (event.request.url.includes('/api/')) {
+  // Skip non-GET requests
+  if (request.method !== 'GET') return;
+
+  // Handle API requests
+  if (request.url.includes('/api/')) {
     event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response;
-        })
-        .catch(error => {
-          console.error('API request failed:', error);
-          return new Response(
-            JSON.stringify({
-              error: navigator.onLine ? 'Service unavailable' : 'You are offline',
-              status: 'error'
-            }),
-            {
-              status: navigator.onLine ? 500 : 503,
-              headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-store'
-              }
+      networkFirst(request, API_CACHE).catch(error => {
+        console.error('API request failed:', error);
+        return new Response(
+          JSON.stringify({
+            error: navigator.onLine ? 'Service unavailable' : 'You are offline',
+            status: 'error'
+          }),
+          {
+            status: navigator.onLine ? 500 : 503,
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-store'
             }
-          );
-        })
+          }
+        );
+      })
     );
     return;
   }
 
-  // HTML navigation
-  if (event.request.mode === 'navigate') {
+  // Handle navigation requests
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request)
+      networkFirst(request, STATIC_CACHE)
         .catch(() => caches.match('/offline.html'))
     );
     return;
   }
 
-  // Other static resources
+  // Handle static assets
   event.respondWith(
-    caches.match(event.request)
+    caches.match(request)
       .then(cachedResponse => {
         if (cachedResponse) {
           return cachedResponse;
         }
-
-        return caches.open(RUNTIME_CACHE)
-          .then(cache => {
-            return fetch(event.request)
-              .then(response => {
-                if (!response || response.status !== 200 || response.type !== 'basic') {
-                  return response;
-                }
-
-                cache.put(event.request, response.clone());
-                return response;
-              });
-          });
+        return fetch(request).then(response => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+          const cache = caches.open(DYNAMIC_CACHE);
+          cache.then(cache => cache.put(request, response.clone()));
+          return response;
+        });
       })
   );
 });
 
-// Handle errors
+// Error handling
 self.addEventListener('error', event => {
   console.error('Service worker error:', event.error);
 });
