@@ -33,16 +33,16 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
   };
   
   return (
-    <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-4 transition-colors">
+    <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-4 transition-colors fixed bottom-0 left-0 right-0">
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-          <div className="relative">
+          <div className="relative flex items-center">
             <Textarea
               ref={textareaRef}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ask about any tech topic in a straightforward way..."
-              className="w-full min-h-[60px] max-h-[200px] pr-12 resize-none bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:border-primary"
+              placeholder="Ask about any tech topic..."
+              className="w-full min-h-[60px] max-h-[200px] pr-16 resize-none bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:border-primary rounded-full"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -59,28 +59,18 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 onClick={() => setMessage("")}
                 aria-label="Clear message"
               >
                 <X className="h-5 w-5" />
               </Button>
-            ) : (
-              <div className="absolute right-2 top-2 text-gray-400">
-                <HelpCircle className="h-5 w-5 opacity-50" />
-              </div>
-            )}
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Press <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Enter</kbd> to send, <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded">Shift + Enter</kbd> for new line
-            </p>
+            ) : null}
             
             <Button
               type="submit"
               disabled={!message.trim()}
-              className="rounded-full bg-primary hover:bg-primary/90"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-primary hover:bg-primary/90"
               size="icon"
               aria-label="Send message"
             >

@@ -12,7 +12,7 @@ const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
   ({ messages, isTyping }, ref) => {
     return (
       <main 
-        className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900" 
+        className="flex-1 overflow-y-auto p-4 pb-24 bg-gray-50 dark:bg-gray-900" 
         ref={ref}
       >
         <div className="max-w-3xl mx-auto space-y-4">
@@ -27,7 +27,7 @@ const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
           {isTyping && <TypingIndicator />}
           
           {/* Spacer for better scrolling to bottom */}
-          <div className="h-4" />
+          <div className="h-20" />
         </div>
       </main>
     );
