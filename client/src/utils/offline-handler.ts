@@ -4,14 +4,18 @@ import { queryClient } from '@/lib/query-client';
 
 interface OfflineStore {
   isOnline: boolean;
+  syncInProgress: boolean;
+  lastSyncTime?: number;
   pendingRequests: Array<{
     url: string;
     method: string;
     body?: any;
     timestamp: number;
     retryCount: number;
+    error?: string;
   }>;
   setOnline: (status: boolean) => void;
+  setSyncStatus: (inProgress: boolean) => void;
   addPendingRequest: (request: any) => void;
   removePendingRequest: (url: string) => void;
 }
@@ -50,13 +54,18 @@ export function initializeOfflineHandler() {
 
 async function syncPendingRequests() {
   const store = useOfflineStore.getState();
+  if (store.syncInProgress) return;
+  
+  store.setSyncStatus(true);
   const requests = [...store.pendingRequests];
   
-  for (const request of requests) {
-    if (request.retryCount >= 3) {
-      store.removePendingRequest(request.url);
-      continue;
-    }
+  try {
+    for (const request of requests) {
+      if (request.retryCount >= 3) {
+        console.warn(`Request to ${request.url} failed after 3 retries`);
+        store.removePendingRequest(request.url);
+        continue;
+      }
 
     try {
       const response = await fetch(request.url, {
