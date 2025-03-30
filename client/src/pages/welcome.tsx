@@ -97,17 +97,19 @@ export default function Welcome() {
         description: `Welcome to TTwW Answerbot, ${response.firstName || 'user'}!`,
       });
 
-      // Check auth status and navigate
-      const authCheck = await apiRequest('/api/auth/status');
-      if (authCheck.isLoggedIn) {
-        navigate('/chat');
-      } else {
-        toast({
-          title: 'Navigation error',
-          description: 'Please try logging in again',
-          variant: 'destructive',
-        });
-      }
+      // Check auth status and navigate after a short delay to allow session to update
+      setTimeout(async () => {
+        const authCheck = await apiRequest('/api/auth/status');
+        if (authCheck.isLoggedIn) {
+          navigate('/chat');
+        } else {
+          toast({
+            title: 'Navigation error',
+            description: 'Please try logging in again',
+            variant: 'destructive',
+          });
+        }
+      }, 500);
     } catch (error) {
       console.error('Registration error:', error);
       toast({

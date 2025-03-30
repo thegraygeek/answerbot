@@ -176,10 +176,10 @@ function Router() {
 
   useEffect(() => {
     if (!authStatus.isLoading) {
-      if (authStatus.isLoggedIn && location === "/") {
+      if (authStatus.isLoggedIn && (location === "/" || location === "/welcome")) {
         setLocation("/chat");
       } else if (!authStatus.isLoggedIn && location === "/chat") {
-        setLocation("/welcome");
+        setLocation("/");
       }
     }
   }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
