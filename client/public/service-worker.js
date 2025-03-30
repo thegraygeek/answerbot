@@ -1,5 +1,6 @@
-const CACHE_NAME = 'ttw-cache-v5';
-const RUNTIME_CACHE = 'ttw-runtime-v5';
+
+const CACHE_NAME = 'ttw-cache-v6';
+const RUNTIME_CACHE = 'ttw-runtime-v6';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -7,30 +8,9 @@ const STATIC_RESOURCES = [
   '/favicon.ico',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/src/main.tsx',
-  '/src/styles.css',
-  '/welcome'
-];
-
-// Cache first, then network strategy
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-      .catch(() => caches.match('/offline.html'))
-  );
-});
-
-// Offline fallback page
-const OFFLINE_PAGE = '/offline.html';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
   '/ttww-logo-dark.png',
   '/ttww-logo-light.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/welcome'
 ];
 
 self.addEventListener('install', event => {
@@ -38,25 +18,36 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(STATIC_RESOURCES);
       })
   );
 });
 
 self.addEventListener('fetch', event => {
-  // Special handling for welcome page - bypass cache
-  if (event.request.url.includes('/welcome')) {
-    return event.respondWith(fetch(event.request));
-  }
-
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
-  
+
+  // Special handling for API requests
   if (event.request.url.includes('/api/')) {
-    return fetch(event.request);
+    return event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          return caches.match('/offline.html') ||
+            new Response('Network error occurred', { status: 503 });
+        })
+    );
   }
 
+  // Network first strategy for welcome page
+  if (event.request.url.includes('/welcome')) {
+    return event.respondWith(
+      fetch(event.request)
+        .catch(() => caches.match(event.request))
+    );
+  }
+
+  // Cache first strategy for static resources
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -66,7 +57,7 @@ self.addEventListener('fetch', event => {
 
         return fetch(event.request)
           .then(response => {
-            if (!response || response.status !== 200 || response.type !== 'basic' || !response.ok) {
+            if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
@@ -74,13 +65,13 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
-              })
-              .catch(error => console.error('Cache write failed:', error));
+              });
 
             return response;
           })
           .catch(() => {
-            return new Response('Network error occurred', { status: 503 });
+            return caches.match('/offline.html') ||
+              new Response('Network error occurred', { status: 503 });
           });
       })
   );
@@ -91,7 +82,7 @@ self.addEventListener('activate', event => {
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
             return caches.delete(cacheName);
           }
         })
