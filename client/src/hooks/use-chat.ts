@@ -63,7 +63,9 @@ export function useChat() {
         setIsTyping(false);
       }, 500);
 
-      return () => clearTimeout(timeout);
+      // Cleanup function
+      const cleanup = () => clearTimeout(timeout);
+      return cleanup;
     } catch (error) {
       console.error('Error getting response:', error);
       setIsTyping(false);
@@ -75,11 +77,17 @@ export function useChat() {
       };
       setMessages(prev => [...prev, errorMessage]);
       
+      const errorDescription = error instanceof Error ? error.message : "Failed to get response from the server";
       toast({
         title: "Error",
-        description: "Failed to get response from the server",
+        description: errorDescription,
         variant: "destructive"
       });
+      
+      // Check if error is due to auth
+      if (error instanceof Response && error.status === 401) {
+        window.location.href = '/';
+      }
     }
   };
 

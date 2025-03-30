@@ -28,30 +28,28 @@ export default function Welcome() {
 
   // Try to load saved form data from localStorage on component mount
   useEffect(() => {
-    // Check if user is already logged in
-    const storedFormData = localStorage.getItem('registration_form');
-    if (storedFormData) {
-      try {
-        const parsedData = JSON.parse(storedFormData);
-        setSavedData(parsedData);
-        form.reset(parsedData);
-      } catch (error) {
-        console.error('Error parsing stored form data:', error);
+    // Check auth status first
+    apiRequest('/api/auth/status').then(status => {
+      if (status.isLoggedIn) {
+        navigate('/chat');
+        return;
       }
-    }
-    setInitialLoad(false);
 
-    try {
-      const savedFormData = localStorage.getItem('registration_form_data');
-      if (savedFormData) {
-        const parsed = JSON.parse(savedFormData);
-        setSavedData(parsed);
-        form.reset(parsed);
+      const storedFormData = localStorage.getItem('registration_form');
+      if (storedFormData) {
+        try {
+          const parsedData = JSON.parse(storedFormData);
+          setSavedData(parsedData);
+          form.reset(parsedData);
+        } catch (error) {
+          console.error('Error parsing stored form data:', error);
+        }
       }
-    } catch (e) {
-      console.error('Error loading saved form data:', e);
-    }
-    setInitialLoad(false);
+      setInitialLoad(false);
+    }).catch(error => {
+      console.error('Error checking auth status:', error);
+      setInitialLoad(false);
+    });
   }, []);
 
   const form = useForm<RegistrationData>({
@@ -82,7 +80,7 @@ export default function Welcome() {
         firstName: string;
         isLoggedIn: boolean;
       }
-      
+
       const response = await apiRequest<RegisterResponse>('/api/register', {
         method: 'POST',
         body: JSON.stringify(data)
@@ -138,18 +136,18 @@ export default function Welcome() {
           <h1 className="text-3xl font-bold text-primary">TTwW Answerbot</h1>
           <p className="mt-2 text-muted-foreground">Your personal AI tech assistant</p>
         </div>
-        
+
         {/* Registration Card */}
         <div className="w-full max-w-md bg-card rounded-xl shadow-lg border border-border p-6">
           <h2 className="text-xl font-semibold text-center mb-6">Create Your Account</h2>
-          
+
           {savedData && (
             <div className="mb-6 p-3 bg-primary/10 rounded-lg text-sm">
               <p className="font-medium">Welcome back!</p>
               <p className="text-muted-foreground">We've restored your previous information.</p>
             </div>
           )}
-          
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
               <FormField
