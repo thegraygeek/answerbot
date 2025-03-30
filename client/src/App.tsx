@@ -14,7 +14,7 @@ export const useAuth = () => {
   };
 };
 import { useLocation, useNavigate } from './hooks/use-location';
-import { queryClient } from './lib/query-client';
+import { queryClient } from "@/lib/query-client";
 import { Switch, Route, Redirect } from "wouter";
 import { apiRequest } from "./lib/queryClient";
 import Home from "@/pages/home";
