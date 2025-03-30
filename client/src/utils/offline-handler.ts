@@ -49,7 +49,8 @@ async function syncPendingRequests() {
 
   try {
     for (const request of requests) {
-      if (request.retryCount >= 3) {
+      if (request.retryCount >= 5) {
+        console.warn(`Request to ${request.url} failed after 5 retries, removing from queue`);
         store.removePendingRequest(request.url);
         continue;
       }
