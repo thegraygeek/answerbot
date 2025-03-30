@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat API Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .message {
+      padding: 10px;
+      border-radius: 5px;
+      max-width: 70%;
+    }
+    .user {
+      background-color: #e6f7ff;
+      align-self: flex-end;
+    }
+    .assistant {
+      background-color: #f2f2f2;
+      align-self: flex-start;
+    }
+    .input-area {
+      display: flex;
+      margin-top: 20px;
+      gap: 10px;
+    }
+    input {
+      flex-grow: 1;
+      padding: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:disabled {
+      background-color: #cccccc;
+    }
+    .status {
+      margin-top: 10px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat API Test</h1>
+  
+  <div id="chat-container" class="container"></div>
+  
+  <div class="input-area">
+    <input type="text" id="message-input" placeholder="Type your message...">
+    <button id="send-button">Send</button>
+  </div>
+  
+  <div class="input-area">
+    <button id="clear-button">Clear Chat</button>
+    <button id="get-history-button">Get History</button>
+  </div>
+  
+  <div id="status" class="status"></div>
+  
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const clearButton = document.getElementById('clear-button');
+    const getHistoryButton = document.getElementById('get-history-button');
+    const statusDiv = document.getElementById('status');
+    
+    // Load chat history on page load
+    window.addEventListener('DOMContentLoaded', getHistory);
+    
+    sendButton.addEventListener('click', sendMessage);
+    clearButton.addEventListener('click', clearChat);
+    getHistoryButton.addEventListener('click', getHistory);
+    
+    messageInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+    
+    function addMessage(role, content) {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', role);
+      messageDiv.textContent = content;
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+    
+    async function getHistory() {
+      try {
+        statusDiv.textContent = 'Getting chat history...';
+        const response = await fetch('/api/chat/history');
+        console.log('History response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const text = await response.text();
+        console.log('History response text:', text);
+        
+        const data = JSON.parse(text);
+        console.log('History data:', data);
+        
+        // Clear existing messages
+        chatContainer.innerHTML = '';
+        
+        // Display messages
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            addMessage(msg.role, msg.content);
+          });
+        }
+        
+        statusDiv.textContent = 'Chat history loaded successfully.';
+      } catch (error) {
+        console.error('Error getting history:', error);
+        statusDiv.textContent = `Error getting history: ${error.message}`;
+      }
+    }
+    
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) return;
+      
+      addMessage('user', message);
+      messageInput.value = '';
+      sendButton.disabled = true;
+      statusDiv.textContent = 'Sending message...';
+      
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ role: 'user', content: message }),
+        });
+        
+        console.log('Send message response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const text = await response.text();
+        console.log('Response text:', text);
+        
+        const data = JSON.parse(text);
+        console.log('Response data:', data);
+        
+        if (data.role === 'assistant') {
+          addMessage('assistant', data.content);
+        }
+        
+        statusDiv.textContent = 'Message sent and response received.';
+      } catch (error) {
+        console.error('Error sending message:', error);
+        statusDiv.textContent = `Error sending message: ${error.message}`;
+      } finally {
+        sendButton.disabled = false;
+      }
+    }
+    
+    async function clearChat() {
+      try {
+        statusDiv.textContent = 'Clearing chat...';
+        const response = await fetch('/api/chat/clear', {
+          method: 'POST',
+        });
+        
+        console.log('Clear chat response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        
+        const text = await response.text();
+        console.log('Clear chat response text:', text);
+        
+        const data = JSON.parse(text);
+        console.log('Clear chat data:', data);
+        
+        // Clear existing messages
+        chatContainer.innerHTML = '';
+        
+        // Display welcome message
+        if (data.messages && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            addMessage(msg.role, msg.content);
+          });
+        }
+        
+        statusDiv.textContent = 'Chat cleared successfully.';
+      } catch (error) {
+        console.error('Error clearing chat:', error);
+        statusDiv.textContent = `Error clearing chat: ${error.message}`;
+      }
+    }
+  </script>
+</body>
+</html>

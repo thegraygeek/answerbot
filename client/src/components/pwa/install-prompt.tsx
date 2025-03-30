@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useTheme } from '@/hooks/use-theme';
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface InstallPromptProps {
   onInstall: () => void;
@@ -7,144 +8,44 @@ interface InstallPromptProps {
 }
 
 export default function InstallPrompt({ onInstall, onDismiss }: InstallPromptProps) {
-  const [animated, setAnimated] = useState(false);
-  const [minimized, setMinimized] = useState(false);
-  const { theme } = useTheme();
-  
-  // Start animation after component mounts
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimated(true);
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Handle dismiss
-  const handleDismiss = () => {
-    setAnimated(false);
-    setTimeout(() => {
-      if (onDismiss) onDismiss();
-    }, 300);
-  };
-  
-  // Toggle minimized state
-  const toggleMinimized = () => {
-    setMinimized(!minimized);
-  };
-  
-  // iOS detection
-  const isIOS = typeof navigator !== 'undefined' && 
-    /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-    !(window as any).MSStream;
-    
   return (
-    <>
-      {/* Full prompt */}
-      {!minimized && (
-        <div className={`fixed z-50 inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${animated ? 'opacity-100' : 'opacity-0'}`}
-             onClick={(e) => e.target === e.currentTarget && toggleMinimized()}>
-          <div className={`fixed max-w-md w-11/12 left-1/2 top-1/2 transform -translate-x-1/2 ${animated ? '-translate-y-1/2 scale-100' : 'translate-y-full scale-95'} transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden`}>
-            {/* Header */}
-            <div className="relative h-24 bg-primary text-white flex items-center justify-center">
-              <button
-                onClick={handleDismiss}
-                className="absolute right-2 top-2 p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-                aria-label="Close"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-              
-              <div className="text-center">
-                <h2 className="text-xl font-semibold">Install TTwW Answerbot</h2>
-                <p className="text-sm opacity-90 mt-1">Get the best experience</p>
-              </div>
-            </div>
-            
-            {/* Content */}
-            <div className="p-5">
-              <div className="flex items-start space-x-4 mb-5">
-                <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center text-white shrink-0">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
-                    <path d="M12 2a8 8 0 0 0-8 8v12h16V10a8 8 0 0 0-8-8z"></path>
-                    <path d="M12 6a4 4 0 0 0-4 4v10h8V10a4 4 0 0 0-4-4z"></path>
-                    <line x1="12" y1="16" x2="12" y2="19"></line>
-                  </svg>
-                </div>
-                
-                <div>
-                  <h3 className="font-medium text-lg dark:text-white">Why install our app?</h3>
-                  <ul className="mt-2 space-y-1.5 text-sm text-gray-700 dark:text-gray-300">
-                    <li className="flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Works offline when internet is unavailable
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Faster access without opening browser
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                      Full-screen experience without browser UI
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              {isIOS ? (
-                <div className="bg-blue-50 dark:bg-blue-900/30 rounded-lg p-3 mb-4 text-sm">
-                  <p className="font-medium text-blue-800 dark:text-blue-200">For iOS devices:</p>
-                  <ol className="list-decimal ml-5 mt-1 text-blue-700 dark:text-blue-300 space-y-1">
-                    <li>Tap the share button <span className="inline-block w-5 h-5 align-text-bottom bg-gray-300 dark:bg-gray-600 rounded text-center">↑</span> at the bottom of the screen</li>
-                    <li>Scroll and tap <strong>Add to Home Screen</strong></li>
-                    <li>Tap <strong>Add</strong> in the top right</li>
-                  </ol>
-                </div>
-              ) : (
-                <button 
-                  onClick={onInstall}
-                  className="w-full py-5 text-base font-medium bg-primary hover:bg-primary/90 transition-colors text-white rounded-md"
-                >
-                  Install Answerbot Now
-                </button>
-              )}
-              
-              <button 
-                onClick={toggleMinimized}
-                className="w-full text-center text-sm text-gray-500 dark:text-gray-400 mt-3 hover:underline"
-              >
-                Remind me later
-              </button>
-            </div>
-          </div>
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:bottom-4 md:w-80 bg-card border rounded-lg shadow-lg p-4 z-50 animate-in slide-in-from-bottom-5">
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex items-center">
+          <img 
+            src="/ttww-logo-dark.png" 
+            alt="TTwW Answerbot" 
+            className="w-10 h-10 mr-3 rounded-md" 
+          />
+          <h3 className="font-semibold text-lg">Install TTwW Answerbot</h3>
         </div>
-      )}
+        {onDismiss && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onDismiss} 
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Button>
+        )}
+      </div>
       
-      {/* Minimized prompt */}
-      {minimized && (
-        <div 
-          className={`fixed bottom-6 right-6 bg-primary text-white rounded-full shadow-lg p-3 cursor-pointer z-50 transition-all duration-300 ${animated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-          onClick={toggleMinimized}
-        >
-          <div className="flex items-center space-x-2">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
-              <path d="M12 2a8 8 0 0 0-8 8v12h16V10a8 8 0 0 0-8-8z"></path>
-              <path d="M12 6a4 4 0 0 0-4 4v10h8V10a4 4 0 0 0-4-4z"></path>
-              <line x1="12" y1="16" x2="12" y2="19"></line>
-            </svg>
-            <span className="font-medium">Install App</span>
-          </div>
-        </div>
-      )}
-    </>
+      <p className="text-muted-foreground text-sm mb-3">
+        Install this app on your device for quick access anytime, even offline.
+      </p>
+      
+      <div className="flex justify-end gap-2">
+        {onDismiss && (
+          <Button variant="outline" size="sm" onClick={onDismiss}>
+            Not now
+          </Button>
+        )}
+        <Button variant="default" size="sm" onClick={onInstall}>
+          Install app
+        </Button>
+      </div>
+    </div>
   );
 }
