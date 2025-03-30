@@ -48,7 +48,7 @@ export function useChat() {
       setMessages(prev => [...prev, userMessage]);
 
       // Get bot response
-      const response = await apiRequest<Message>('/api/chat', {
+      const data = await apiRequest<Message>('/api/chat', {
         method: 'POST',
         body: JSON.stringify({ content })
       });
