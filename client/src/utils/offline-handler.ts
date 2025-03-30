@@ -1,5 +1,6 @@
 
 import { create } from 'zustand';
+import { queryClient } from '@/lib/query-client';
 
 interface OfflineStore {
   isOnline: boolean;
@@ -8,6 +9,7 @@ interface OfflineStore {
     method: string;
     body?: any;
     timestamp: number;
+    retryCount: number;
   }>;
   setOnline: (status: boolean) => void;
   addPendingRequest: (request: any) => void;
@@ -20,7 +22,11 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
   setOnline: (status) => set({ isOnline: status }),
   addPendingRequest: (request) => 
     set((state) => ({ 
-      pendingRequests: [...state.pendingRequests, { ...request, timestamp: Date.now() }] 
+      pendingRequests: [...state.pendingRequests, { 
+        ...request, 
+        timestamp: Date.now(),
+        retryCount: 0 
+      }] 
     })),
   removePendingRequest: (url) =>
     set((state) => ({
@@ -33,6 +39,7 @@ export function initializeOfflineHandler() {
 
   window.addEventListener('online', () => {
     store.setOnline(true);
+    queryClient.invalidateQueries();
     syncPendingRequests();
   });
 
@@ -44,17 +51,32 @@ export function initializeOfflineHandler() {
 async function syncPendingRequests() {
   const store = useOfflineStore.getState();
   const requests = [...store.pendingRequests];
-
+  
   for (const request of requests) {
+    if (request.retryCount >= 3) {
+      store.removePendingRequest(request.url);
+      continue;
+    }
+
     try {
-      await fetch(request.url, {
+      const response = await fetch(request.url, {
         method: request.method,
         body: request.body ? JSON.stringify(request.body) : undefined,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Retry-Count': request.retryCount.toString()
+        }
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       store.removePendingRequest(request.url);
+      queryClient.invalidateQueries();
     } catch (error) {
       console.error('Failed to sync request:', error);
+      request.retryCount++;
     }
   }
 }
