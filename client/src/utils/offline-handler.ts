@@ -74,7 +74,15 @@ async function syncPendingRequests() {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorText = await response.text();
+          throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        // Cache successful responses
+        if (response.ok && response.status !== 204) {
+          const responseClone = response.clone();
+          const cache = await caches.open('api-cache');
+          await cache.put(request.url, responseClone);
         }
 
         store.removePendingRequest(request.url);
@@ -107,6 +115,17 @@ return syncPromise;
 
 export function initializeOfflineHandler() {
   const store = useOfflineStore.getState();
+  
+  // Check connection status immediately
+  store.setOnline(navigator.onLine);
+
+  // Monitor connection quality
+  const connection = (navigator as any).connection;
+  if (connection) {
+    connection.addEventListener('change', () => {
+      store.setOnline(navigator.onLine && connection.downlink > 0);
+    });
+  }
 
   window.addEventListener('online', () => {
     store.setOnline(true);
