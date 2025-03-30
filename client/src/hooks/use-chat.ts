@@ -39,23 +39,40 @@ export function useChat() {
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
+    console.log("Sending message:", content);
+
     // Add user message optimistically to the UI
     const userMessage: Message = { role: 'user', content };
-    queryClient.setQueryData(['chat-history'], (oldData: any) => ({
-      messages: [...(oldData?.messages || []), userMessage],
-    }));
+    console.log("Current message history before update:", 
+      queryClient.getQueryData(['chat-history']));
+    
+    queryClient.setQueryData(['chat-history'], (oldData: any) => {
+      console.log("Old data in update:", oldData);
+      return {
+        messages: [...(oldData?.messages || []), userMessage],
+      };
+    });
+    
+    console.log("Updated message history:", 
+      queryClient.getQueryData(['chat-history']));
     
     setIsTyping(true);
 
     try {
       // Call API
+      console.log("Calling API with message:", userMessage);
       const data = await apiRequest<Message>('/api/chat', {
         method: 'POST',
         body: JSON.stringify(userMessage)
       });
       
+      console.log("API response:", data);
+      
       // Refresh chat history to get latest messages
+      console.log("Refreshing chat history...");
       await refetch();
+      console.log("Chat history after refresh:", 
+        queryClient.getQueryData(['chat-history']));
       
       // Stop typing indicator after a small delay
       setTimeout(() => {

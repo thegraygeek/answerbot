@@ -138,7 +138,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API route for getting AI response - no authentication required
   app.post("/api/chat", async (req, res) => {
     try {
-      console.log("Received chat API request:", req.body);
+      console.log("=== CHAT REQUEST STARTED ===");
+      console.log("Received chat API request:", JSON.stringify(req.body));
       const body = messageSchema.parse(req.body);
       
       if (!OPENAI_API_KEY) {
@@ -149,8 +150,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       try {
-        // Log session state before processing
-        console.log("Session before processing:", req.session);
+        console.log("Request validated, processing message");
+        
+        // Log session ID to track session consistency
+        console.log(`Session ID: ${req.sessionID}`);
+        
+        // Log session state before processing - but only keys not full objects to avoid excessive logging
+        if (req.session) {
+          console.log("Session keys before processing:", Object.keys(req.session));
+          if (req.session.messages) {
+            console.log(`Session has ${req.session.messages.length} messages`);
+          } else {
+            console.log("Session does not have messages array");
+          }
+        } else {
+          console.log("No session object found");
+        }
         
         // Initialize message history if not already present
         if (!req.session.messages) {
@@ -159,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // Add user message to history
-        console.log("Adding user message to history:", body.content);
+        console.log(`Adding user message to history: "${body.content}"`);
         req.session.messages.push({
           role: 'user',
           content: body.content
@@ -167,7 +182,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Prepare message history for OpenAI, including only the last 10 messages to keep context reasonable
         const messageHistory = req.session.messages.slice(-10);
-        console.log("Message history (last 10):", JSON.stringify(messageHistory));
+        console.log(`Prepared message history with ${messageHistory.length} messages`);
+        console.log("Message history (last 10):", JSON.stringify(messageHistory, null, 2));
         
         // Create properly typed messages for the OpenAI API
         const systemMessage: ChatCompletionMessageParam = { 
@@ -179,8 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const chatMessages: ChatCompletionMessageParam[] = [systemMessage];
         
         // Add only valid message types (user and assistant)
-        messageHistory.forEach(msg => {
+        messageHistory.forEach((msg, index) => {
           if (msg.role === 'user' || msg.role === 'assistant') {
+            console.log(`Adding message ${index} to OpenAI request: ${msg.role}: ${msg.content.substring(0, 30)}...`);
             chatMessages.push({
               role: msg.role,
               content: msg.content
@@ -188,10 +205,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
-        console.log("Calling OpenAI API with messages:", JSON.stringify(chatMessages));
+        console.log(`Total messages in OpenAI request: ${chatMessages.length}`);
+        console.log("Calling OpenAI API with messages:", JSON.stringify(chatMessages, null, 2));
+        
+        // Check if the API key is available
+        if (!OPENAI_API_KEY) {
+          console.error("OpenAI API key is missing or empty");
+          throw new Error("OpenAI API key is not configured");
+        }
         
         // Call OpenAI API with the new client
         // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        console.log("Making request to OpenAI API...");
         const completion = await openai.chat.completions.create({
           model: "gpt-4o",
           messages: chatMessages,
@@ -199,7 +224,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           max_tokens: 100  // Reduced to enforce 50-word limit (approx 100 tokens)
         });
 
-        console.log("OpenAI API response:", JSON.stringify(completion.choices));
+        console.log(`OpenAI API response received: ${completion.choices.length} choices`);
+        console.log("OpenAI API response data:", JSON.stringify(completion.choices, null, 2));
         
         const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
         console.log("Final AI response:", aiResponse);
@@ -231,12 +257,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return res.json(assistantMessage);
       } catch (error) {
+        console.log("=== OPENAI API ERROR ===");
         const openaiError = error as Error;
         console.error("OpenAI API error:", openaiError);
-        return res.status(500).json({ 
-          message: "Error from OpenAI API", 
-          details: openaiError.message || "Unknown error occurred"
-        });
+        console.error("Error stack:", openaiError.stack);
+        
+        // Create an error message
+        const errorMessage = {
+          role: 'assistant',
+          content: "I'm having trouble connecting to my knowledge base right now. Please try again in a moment."
+        };
+        
+        // Try to save the error message to the session
+        try {
+          if (req.session && req.session.messages) {
+            req.session.messages.push(errorMessage);
+            await new Promise<void>((resolve, reject) => {
+              req.session.save((err) => {
+                if (err) {
+                  console.error("Failed to save error message to session:", err);
+                  reject(err);
+                } else {
+                  resolve();
+                }
+              });
+            });
+          }
+        } catch (sessionError) {
+          console.error("Error saving session after OpenAI error:", sessionError);
+        }
+        
+        // Return the error message to display to the user
+        return res.status(500).json(errorMessage);
       }
     } catch (error) {
       console.error("Chat API error:", error);
