@@ -57,18 +57,23 @@ async function syncPendingRequests() {
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), request.retryCount > 0 ? 10000 : 5000);
+        const timeoutId = setTimeout(() => controller.abort(), request.retryCount > 0 ? 15000 : 8000);
+
+        const headers = new Headers({
+          'Content-Type': 'application/json',
+          'X-Retry-Count': request.retryCount.toString(),
+          'X-Request-ID': `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          'Cache-Control': 'no-cache'
+        });
 
         const response = await fetch(request.url, {
           method: request.method,
           body: request.body ? JSON.stringify(request.body) : undefined,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Retry-Count': request.retryCount.toString(),
-            'X-Request-ID': `${Date.now()}-${Math.random().toString(36).slice(2)}`
-          },
+          headers,
           signal: controller.signal,
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          mode: 'same-origin',
+          cache: 'no-cache'
         });
 
         clearTimeout(timeoutId);
@@ -119,15 +124,30 @@ export async function initializeOfflineHandler() {
   // Check connection status immediately
   store.setOnline(navigator.onLine);
 
-  // Register service worker with error handling
+  // Register service worker with enhanced error handling and recovery
   if ('serviceWorker' in navigator) {
     try {
       const registration = await navigator.serviceWorker.register('/service-worker.js', {
-        scope: '/'
+        scope: '/',
+        updateViaCache: 'none'
       });
+      
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (newWorker) {
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New service worker installed and ready');
+            }
+          });
+        }
+      });
+      
       console.log('Service Worker registered with scope:', registration.scope);
     } catch (error) {
       console.error('Service Worker registration failed:', error);
+      // Retry registration after 5 seconds
+      setTimeout(() => initializeOfflineHandler(), 5000);
     }
   }
 
