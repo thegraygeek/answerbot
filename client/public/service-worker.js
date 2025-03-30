@@ -1,11 +1,10 @@
 
-// Cache names with versioning
+// Cache version control
 const CACHE_VERSION = 'v1';
 const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
 
-// Resources to cache
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -41,14 +40,14 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Helper function for network-first strategy
+// Network first with cache fallback strategy
 async function networkFirst(request, cacheName) {
   try {
-    const response = await fetch(request);
-    if (response.ok) {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
-      return response;
+      await cache.put(request, networkResponse.clone());
+      return networkResponse;
     }
     throw new Error('Network response was not ok');
   } catch (error) {
@@ -60,7 +59,27 @@ async function networkFirst(request, cacheName) {
   }
 }
 
-// Fetch event
+// Cache first with network fallback strategy
+async function cacheFirst(request, cacheName) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(request, networkResponse.clone());
+      return networkResponse;
+    }
+    throw new Error('Network response was not ok');
+  } catch (error) {
+    console.error('Cache first strategy failed:', error);
+    throw error;
+  }
+}
+
+// Fetch event handler
 self.addEventListener('fetch', event => {
   const { request } = event;
 
@@ -101,28 +120,47 @@ self.addEventListener('fetch', event => {
 
   // Handle static assets
   event.respondWith(
-    caches.match(request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        return fetch(request).then(response => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          const cache = caches.open(DYNAMIC_CACHE);
-          cache.then(cache => cache.put(request, response.clone()));
-          return response;
-        });
+    cacheFirst(request, STATIC_CACHE)
+      .catch(error => {
+        console.error('Static asset fetch failed:', error);
+        return new Response('Resource not available', { status: 404 });
       })
   );
 });
 
 // Error handling
 self.addEventListener('error', event => {
-  console.error('Service worker error:', event.error);
+  console.error('Service worker error:', event);
 });
 
+// Handle unhandled promise rejections
 self.addEventListener('unhandledrejection', event => {
   console.error('Unhandled promise rejection:', event.reason);
 });
+
+// Background sync registration
+self.addEventListener('sync', event => {
+  if (event.tag === 'sync-data') {
+    event.waitUntil(
+      // Handle background sync
+      syncData().catch(error => {
+        console.error('Background sync failed:', error);
+      })
+    );
+  }
+});
+
+// Background sync handler
+async function syncData() {
+  const cache = await caches.open(API_CACHE);
+  const requests = await cache.keys();
+  
+  for (const request of requests) {
+    try {
+      await fetch(request);
+      await cache.delete(request);
+    } catch (error) {
+      console.error('Failed to sync request:', error);
+    }
+  }
+}
