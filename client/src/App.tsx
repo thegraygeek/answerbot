@@ -179,7 +179,7 @@ function Router() {
       if (authStatus.isLoggedIn && location === "/") {
         setLocation("/chat");
       } else if (!authStatus.isLoggedIn && location === "/chat") {
-        setLocation("/");
+        setLocation("/welcome");
       }
     }
   }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);

@@ -93,15 +93,19 @@ export function usePwa() {
 
     // Show prompt after user has interacted with the page for a while
     const setupTimeThresholds = () => {
-      // First prompt: Show after 30 seconds of page interaction
-      setTimeout(() => {
+      let timeouts: NodeJS.Timeout[] = [];
+      
+      // First prompt: Show after 45 seconds of page interaction
+      timeouts.push(setTimeout(() => {
         checkAndShowPrompt();
-      }, 30 * 1000);
+      }, 45 * 1000));
 
-      // Second prompt: If still not installed, try again after 2 minutes
-      setTimeout(() => {
+      // Second prompt: If still not installed, try again after 3 minutes
+      timeouts.push(setTimeout(() => {
         checkAndShowPrompt();
-      }, 2 * 60 * 1000);
+      }, 3 * 60 * 1000));
+
+      return () => timeouts.forEach(clearTimeout);
     };
 
     // Check if we can show the prompt immediately

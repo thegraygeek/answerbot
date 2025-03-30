@@ -58,10 +58,12 @@ export function useChat() {
       });
       
       // Add bot response after a small delay to simulate typing
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         setMessages(prev => [...prev, data]);
         setIsTyping(false);
       }, 500);
+
+      return () => clearTimeout(timeout);
     } catch (error) {
       console.error('Error getting response:', error);
       setIsTyping(false);
