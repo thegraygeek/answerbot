@@ -61,17 +61,32 @@ export function useChat() {
     try {
       // Call API
       console.log("Calling API with message:", userMessage);
-      const data = await apiRequest<Message>('/api/chat', {
+      const assistantResponse = await apiRequest<Message>('/api/chat', {
         method: 'POST',
         body: JSON.stringify(userMessage)
       });
       
-      console.log("API response:", data);
+      console.log("API response:", assistantResponse);
       
-      // Refresh chat history to get latest messages
-      console.log("Refreshing chat history...");
-      await refetch();
-      console.log("Chat history after refresh:", 
+      // Add the assistant's response directly to the chat history
+      if (assistantResponse && assistantResponse.role === 'assistant') {
+        console.log("Adding assistant response to history:", assistantResponse);
+        
+        // Update the message history in the query cache
+        queryClient.setQueryData(['chat-history'], (oldData: any) => {
+          const oldMessages = oldData?.messages || [];
+          console.log("Previous messages:", oldMessages);
+          
+          // Create new messages array with the assistant's response
+          return {
+            messages: [...oldMessages, assistantResponse],
+          };
+        });
+      } else {
+        console.error("Invalid response from server:", assistantResponse);
+      }
+      
+      console.log("Chat history after adding response:", 
         queryClient.getQueryData(['chat-history']));
       
       // Stop typing indicator after a small delay

@@ -25,33 +25,18 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 // Create OpenAI client
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Function to ensure session has messages initialized - returns a promise
-const ensureSessionMessages = async (req: Request): Promise<Array<{ role: string, content: string }>> => {
-  // Initialize the session if needed
-  if (!req.session.messages || req.session.messages.length === 0) {
-    // Create welcome message
-    const welcomeMessage = {
-      role: 'assistant',
-      content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
-    };
-    
-    // Initialize messages with welcome message
-    req.session.messages = [welcomeMessage];
-    
-    // Save the session explicitly
-    await new Promise<void>((resolve, reject) => {
-      req.session.save((err) => {
-        if (err) {
-          console.error("Session save error:", err);
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
+// Helper function to save session as a promise
+const saveSession = async (session: any): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    session.save((err: any) => {
+      if (err) {
+        console.error("Session save error:", err);
+        reject(err);
+      } else {
+        resolve();
+      }
     });
-  }
-  
-  return req.session.messages;
+  });
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -64,7 +49,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (req.session) {
       try {
-        await ensureSessionMessages(req);
+        // Check if session already has messages
+        if (!req.session.messages || req.session.messages.length === 0) {
+          console.log("Middleware: No messages in session, initializing with welcome message");
+          // Create welcome message
+          const welcomeMessage = {
+            role: 'assistant',
+            content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
+          };
+          
+          // Initialize messages with welcome message
+          req.session.messages = [welcomeMessage];
+          
+          // Save the session explicitly
+          await saveSession(req.session);
+          
+          console.log("Middleware: Initialized session with welcome message");
+        }
       } catch (error) {
         console.error("Failed to initialize session:", error);
       }
@@ -87,8 +88,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/chat/history", async (req, res) => {
     if (req.session) {
       try {
-        const messages = await ensureSessionMessages(req);
-        return res.json({ messages });
+        console.log("GET /api/chat/history - Session ID:", req.sessionID);
+        
+        // Check if session already has messages
+        if (!req.session.messages || req.session.messages.length === 0) {
+          console.log("No messages in session, initializing with welcome message");
+          // Create welcome message
+          const welcomeMessage = {
+            role: 'assistant',
+            content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
+          };
+          
+          // Initialize messages with welcome message
+          req.session.messages = [welcomeMessage];
+          
+          // Save the session explicitly
+          await new Promise<void>((resolve, reject) => {
+            req.session.save((err) => {
+              if (err) {
+                console.error("Session save error:", err);
+                reject(err);
+              } else {
+                resolve();
+              }
+            });
+          });
+          
+          console.log("Initialized session with welcome message");
+        } else {
+          console.log(`Session already has ${req.session.messages.length} messages`);
+        }
+        
+        // Return the messages
+        return res.json({ messages: req.session.messages });
       } catch (error) {
         console.error("Failed to save session:", error);
         return res.status(500).json({ message: "Session initialization failed" });
