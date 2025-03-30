@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { queryClient } from '../lib/query-client';
 
@@ -27,8 +26,8 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
   pendingRequests: [],
   setOnline: (status) => set({ isOnline: status }),
   setSyncStatus: (inProgress) => set({ syncInProgress: inProgress }),
-  addPendingRequest: (request) => 
-    set((state) => ({ 
+  addPendingRequest: (request) =>
+    set((state) => ({
       pendingRequests: [...state.pendingRequests, request]
     })),
   removePendingRequest: (url) =>
@@ -58,7 +57,7 @@ async function syncPendingRequests() {
         const response = await fetch(request.url, {
           method: request.method,
           body: request.body ? JSON.stringify(request.body) : undefined,
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'X-Retry-Count': request.retryCount.toString()
           },
@@ -81,9 +80,15 @@ async function syncPendingRequests() {
         request.error = error instanceof Error ? error.message : 'Unknown error';
       }
     }
+  } catch (error) {
+    console.error('Sync failed:', error);
   } finally {
     store.setSyncStatus(false);
-    store.lastSyncTime = Date.now();
+    // Trigger a retry after 30 seconds if there are still pending requests
+    const remainingRequests = useOfflineStore.getState().pendingRequests;
+    if (remainingRequests.length > 0) {
+      setTimeout(syncPendingRequests, 30000);
+    }
   }
 }
 
