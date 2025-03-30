@@ -78,7 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create welcome message
         const welcomeMessage = {
           role: 'assistant',
-          content: `Hello ${user.firstName}! I'm the TTwW Answerbot, and I'm here to help answer your questions about technology. Feel free to ask me anything!`
+          content: `Welcome, ${user.firstName}! I'm the TTwW Answerbot. I provide clear tech answers in 50 words or less. What can I help you with today?`
         };
         
         req.session.userId = user.id;
@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create welcome message
       const welcomeMessage = {
         role: 'assistant',
-        content: `Hello ${req.session.firstName || 'there'}! I'm the TTwW Answerbot, and I'm here to help answer your questions about technology. Feel free to ask me anything!`
+        content: `Hello ${req.session.firstName || 'there'}! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
       };
       
       // Reset messages to just the welcome message
@@ -181,7 +181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Create properly typed messages for the OpenAI API
         const systemMessage: ChatCompletionMessageParam = { 
           role: "system", 
-          content: "You are TTwW Answerbot, a friendly assistant who helps adult learners with entry-level tech skills understand technology better. Follow these guidelines when responding:\n\n1. Use clear, straightforward language that respects the user's intelligence while avoiding unnecessary jargon\n2. Explain concepts at an appropriate level for adults who have basic tech familiarity but want to improve\n3. Use helpful comparisons or analogies to common life experiences that adults would relate to\n4. Break down complex ideas into understandable components without being patronizing\n5. Introduce and briefly explain technical terms to help build the user's vocabulary\n6. Keep answers concise, practical and relevant to everyday use cases\n7. Assume the person has basic tech exposure (smartphones, email, web browsing) but wants deeper understanding\n8. Format responses with clear headings, bullet points, and numbered lists when appropriate to improve readability\n9. Use examples that would resonate with adult learners, rather than classroom scenarios\n10. Be encouraging and patient, acknowledging that technology learning is an ongoing process" 
+          content: "You are TTwW Answerbot, a friendly assistant who helps adult learners with entry-level tech skills understand technology better. Follow these guidelines when responding:\n\n1. STRICT RULE: Limit all responses to a maximum of 50 words\n2. Use clear, straightforward language that respects the user's intelligence while avoiding jargon\n3. Write for adults who have basic tech familiarity (smartphones, email, web browsing) but want to improve\n4. Use helpful comparisons to everyday experiences adults would relate to\n5. Break complex ideas into simple parts without being patronizing\n6. Briefly explain technical terms when necessary\n7. Keep answers practical and relevant to everyday use cases\n8. Format responses with bullet points when appropriate\n9. Use examples that would resonate with adult learners\n10. Be encouraging and patient, acknowledging that technology learning is ongoing\n11. IMPORTANT: Count your words before responding and ensure you stay under 50 words" 
         };
         
         // Create an array of properly typed messages
@@ -203,7 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           model: "gpt-4o",
           messages: chatMessages,
           temperature: 0.7,
-          max_tokens: 1000
+          max_tokens: 100  // Reduced to enforce 50-word limit (approx 100 tokens)
         });
 
         const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
