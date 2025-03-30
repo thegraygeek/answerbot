@@ -1,4 +1,5 @@
-const CACHE_NAME = 'ttw-cache-v1';
+const CACHE_NAME = 'ttw-cache-v2';
+const RUNTIME_CACHE = 'ttw-runtime-v2';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -25,9 +26,12 @@ self.addEventListener('fetch', event => {
     return event.respondWith(fetch(event.request));
   }
 
-  if (!event.request.url.startsWith(self.location.origin) || 
-      event.request.url.includes('/api/')) {
+  if (!event.request.url.startsWith(self.location.origin)) {
     return;
+  }
+  
+  if (event.request.url.includes('/api/')) {
+    return fetch(event.request);
   }
 
   event.respondWith(
