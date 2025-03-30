@@ -97,38 +97,38 @@ export default function Home() {
           <p className="text-gray-600 dark:text-gray-400 max-w-md mb-6">
             Ask me any technology question for concise explanations in 50 words or less.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-xl mx-auto w-full">
+          <div className="grid grid-cols-1 gap-3 max-w-md mx-auto w-full">
             <Button 
               variant="outline" 
-              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3"
+              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3 px-4"
               onClick={() => sendMessage("What are the most important settings to check for Wi-Fi security?")}
             >
-              <span className="mr-2">🔒</span>
-              <span>How can I make my Wi-Fi more secure?</span>
+              <span className="mr-2 flex-shrink-0">🔒</span>
+              <span className="overflow-hidden">How can I make my Wi-Fi more secure?</span>
             </Button>
             <Button 
               variant="outline" 
-              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3"
+              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3 px-4"
               onClick={() => sendMessage("What's the difference between cloud storage and local storage?")}
             >
-              <span className="mr-2">💾</span>
-              <span>Cloud vs. local storage explained</span>
+              <span className="mr-2 flex-shrink-0">💾</span>
+              <span className="overflow-hidden">Cloud vs. local storage explained</span>
             </Button>
             <Button 
               variant="outline" 
-              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3"
+              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3 px-4"
               onClick={() => sendMessage("How does two-factor authentication work and why should I use it?")}
             >
-              <span className="mr-2">🔐</span>
-              <span>Explain two-factor authentication</span>
+              <span className="mr-2 flex-shrink-0">🔐</span>
+              <span className="overflow-hidden">Explain two-factor authentication</span>
             </Button>
             <Button 
               variant="outline" 
-              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3"
+              className="justify-start text-left text-wrap break-words whitespace-normal h-auto py-3 px-4"
               onClick={() => sendMessage("What are common smartphone issues and how can I troubleshoot them?")}
             >
-              <span className="mr-2">📱</span>
-              <span>Troubleshoot common smartphone problems</span>
+              <span className="mr-2 flex-shrink-0">📱</span>
+              <span className="overflow-hidden">Troubleshoot common smartphone problems</span>
             </Button>
           </div>
         </div>
