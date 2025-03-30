@@ -32,10 +32,8 @@ export function usePwa() {
       
       // Only show the prompt if the user hasn't explicitly dismissed it
       if (!hasUserDismissed) {
-        // Show prompt after a reasonable delay (60 seconds)
-        setTimeout(() => {
-          setShowInstallPrompt(true);
-        }, 60 * 1000);
+        // Show prompt immediately without delay
+        setShowInstallPrompt(true);
       }
     };
 
