@@ -69,20 +69,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create new user
       const user = await storage.createUser(userData);
       
-      // Store user info in session
-      if (req.session) {
-        req.session.userId = user.id;
-        req.session.email = user.email;
-        req.session.firstName = user.firstName;
-        req.session.isLoggedIn = true;
-        
-        // Force save the session to ensure it persists
+      // Store user info in session with error handling
+      if (!req.session) {
+        throw new Error("Session not initialized");
+      }
+      
+      req.session.userId = user.id;
+      req.session.email = user.email;
+      req.session.firstName = user.firstName;
+      req.session.isLoggedIn = true;
+      
+      // Force save the session to ensure it persists
+      try {
         await new Promise<void>((resolve, reject) => {
           req.session.save(err => {
             if (err) reject(err);
             else resolve();
           });
         });
+      } catch (error) {
+        console.error("Session save error:", error);
+        throw new Error("Failed to persist session");
       }
       
       return res.status(201).json({ 
