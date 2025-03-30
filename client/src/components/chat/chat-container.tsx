@@ -1,8 +1,7 @@
-
-import { forwardRef } from "react";
-import ChatMessage from "./chat-message";
-import TypingIndicator from "./typing-indicator";
-import { Message } from "@shared/schema";
+import { forwardRef } from 'react';
+import ChatMessage from './chat-message';
+import TypingIndicator from './typing-indicator';
+import { Message } from '@shared/schema';
 
 interface ChatContainerProps {
   messages: Message[];
@@ -11,26 +10,28 @@ interface ChatContainerProps {
 
 const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
   ({ messages, isTyping }, ref) => {
-    const visibleMessages = messages.slice(-50); // Keep last 50 messages to prevent memory issues and improve performance
-    
     return (
-      <main className="flex-1 overflow-y-auto px-4 py-4" ref={ref}>
-        <div className="max-w-3xl mx-auto">
-          {visibleMessages.map((message, index) => (
-            <ChatMessage 
-              key={`${message.role}-${index}-${message.content.substring(0, 10)}`}
-              role={message.role}
-              content={message.content}
-            />
-          ))}
-          
-          {isTyping && <TypingIndicator />}
-        </div>
-      </main>
+      <div 
+        ref={ref}
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-background"
+      >
+        {messages.map((message, i) => (
+          <ChatMessage 
+            key={i} 
+            role={message.role as 'user' | 'assistant'} 
+            content={message.content} 
+          />
+        ))}
+        
+        {isTyping && <TypingIndicator />}
+        
+        {/* Empty div to ensure scroll to bottom works */}
+        <div className="h-1" />
+      </div>
     );
   }
 );
 
-ChatContainer.displayName = "ChatContainer";
+ChatContainer.displayName = 'ChatContainer';
 
 export default ChatContainer;

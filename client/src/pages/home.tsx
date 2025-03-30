@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import { usePwa } from "@/hooks/use-pwa";
 import ChatContainer from "@/components/chat/chat-container";
 import InputArea from "@/components/chat/input-area";
 import { useChat } from "@/hooks/use-chat";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import InstallPrompt from "@/components/pwa/install-prompt";
-import { usePwa } from "@/hooks/use-pwa";
+import { PwaInstallPrompt } from "@/components/pwa/install-prompt";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, LogOut, RefreshCw, User } from "lucide-react";
-import { useAuth } from "../App";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Home() {
   const { 
@@ -28,7 +28,7 @@ export default function Home() {
   
   const { showInstallPrompt, installApp } = usePwa();
   const { toast } = useToast();
-  const { firstName, logout, refreshAuth } = useAuth();
+  const { authStatus, refreshAuth, logout } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
 
   // Get latest messages and scroll to bottom
@@ -97,7 +97,7 @@ export default function Home() {
                   className="gap-1 text-sm font-normal"
                 >
                   <User className="h-4 w-4 mr-1" />
-                  {firstName || 'User'}
+                  {authStatus.firstName || 'User'}
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>

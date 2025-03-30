@@ -29,12 +29,12 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useLocation() {
+export function useLocation(): [string, (path: string) => void] {
   const context = useContext(LocationContext);
   if (!context) {
     throw new Error('useLocation must be used within a LocationProvider');
   }
-  return context.path;
+  return [context.path, context.navigate];
 }
 
 export function useNavigate() {
