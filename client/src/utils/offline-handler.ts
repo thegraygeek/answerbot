@@ -113,11 +113,23 @@ async function syncPendingRequests() {
 return syncPromise;
 }
 
-export function initializeOfflineHandler() {
+export async function initializeOfflineHandler() {
   const store = useOfflineStore.getState();
   
   // Check connection status immediately
   store.setOnline(navigator.onLine);
+
+  // Register service worker with error handling
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.register('/service-worker.js', {
+        scope: '/'
+      });
+      console.log('Service Worker registered with scope:', registration.scope);
+    } catch (error) {
+      console.error('Service Worker registration failed:', error);
+    }
+  }
 
   // Monitor connection quality
   const connection = (navigator as any).connection;
