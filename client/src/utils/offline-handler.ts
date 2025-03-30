@@ -52,24 +52,32 @@ async function syncPendingRequests() {
       }
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
         const response = await fetch(request.url, {
           method: request.method,
           body: request.body ? JSON.stringify(request.body) : undefined,
           headers: { 
             'Content-Type': 'application/json',
             'X-Retry-Count': request.retryCount.toString()
-          }
+          },
+          signal: controller.signal
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         store.removePendingRequest(request.url);
-        queryClient.invalidateQueries();
+        await queryClient.invalidateQueries();
       } catch (error) {
         console.error('Failed to sync request:', error);
-        request.retryCount++;
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          request.retryCount++;
+        }
         request.error = error instanceof Error ? error.message : 'Unknown error';
       }
     }

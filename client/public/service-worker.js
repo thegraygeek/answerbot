@@ -154,9 +154,17 @@ async function syncPendingRequests() {
   const requests = await cache.keys();
   const failedRequests = [];
 
-  for (const request of requests) {
+  await Promise.all(requests.map(async (request) => {
     try {
-      const response = await fetch(request.clone());
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(request.clone(), {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         await cache.delete(request);
       } else {
@@ -166,13 +174,17 @@ async function syncPendingRequests() {
         });
       }
     } catch (error) {
-      console.error('Failed to sync request:', error);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        console.warn('Request timeout:', request.url);
+      } else {
+        console.error('Failed to sync request:', error);
+      }
       failedRequests.push({
         url: request.url,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  }
+  }));
 
   if (failedRequests.length > 0) {
     console.warn('Failed requests during sync:', failedRequests);
