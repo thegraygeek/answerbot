@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { usePwa } from "@/hooks/use-pwa";
@@ -13,32 +14,33 @@ export function PwaInstallPrompt() {
         <X className="h-4 w-4" />
       </button>
       <div className="flex flex-col space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold">Install App</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Install our app for the best experience:
-          </p>
-          <ul className="mt-2 space-y-2 text-sm">
-            <li className="flex items-center">
-              <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Works offline when internet is unavailable
-            </li>
-            <li className="flex items-center">
-              <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Faster access without opening browser
-            </li>
-            <li className="flex items-center">
-              <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-              </svg>
-              Full-screen experience without browser UI
-            </li>
-          </ul>
-        </div>
+        <h3 className="text-lg font-semibold">Install App</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Install our app for a better experience with these benefits:
+        </p>
+        <ul className="space-y-2">
+          <li className="flex items-center text-sm">
+            <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Faster access to features
+          </li>
+          <li className="flex items-center text-sm">
+            <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Works offline
+          </li>
+          <li className="flex items-center text-sm">
+            <svg className="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+            Full-screen experience
+          </li>
+        </ul>
+        <Button onClick={installApp} className="w-full">
+          Install Now
+        </Button>
       </div>
     </div>
   );
