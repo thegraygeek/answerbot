@@ -1,6 +1,31 @@
 
-const CACHE_NAME = 'ttw-cache-v9';
-const RUNTIME_CACHE = 'ttw-runtime-v9';
+const CACHE_NAME = 'ttw-cache-v10';
+const RUNTIME_CACHE = 'ttw-runtime-v10';
+
+// Handle offline navigation
+self.addEventListener('navigate', event => {
+  if (!navigator.onLine) {
+    event.respondWith(
+      caches.match('/offline.html')
+    );
+  }
+});
+
+// Improve cache management
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    Promise.all([
+      caches.keys().then(keys => Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME && key !== RUNTIME_CACHE) {
+            return caches.delete(key);
+          }
+        })
+      )),
+      clients.claim()
+    ])
+  );
+});
 
 // Cache expiration duration (24 hours)
 const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
