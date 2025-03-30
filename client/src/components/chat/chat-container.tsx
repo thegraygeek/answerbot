@@ -11,7 +11,7 @@ interface ChatContainerProps {
 
 const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
   ({ messages, isTyping }, ref) => {
-    const visibleMessages = messages.slice(-100); // Keep last 100 messages to prevent memory issues
+    const visibleMessages = messages.slice(-50); // Keep last 50 messages to prevent memory issues and improve performance
     
     return (
       <main className="flex-1 overflow-y-auto px-4 py-4" ref={ref}>

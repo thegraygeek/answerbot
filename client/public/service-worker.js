@@ -1,11 +1,18 @@
-const CACHE_NAME = 'ttw-cache-v3';
-const RUNTIME_CACHE = 'ttw-runtime-v3';
+const CACHE_NAME = 'ttw-cache-v4';
+const RUNTIME_CACHE = 'ttw-runtime-v4';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.ico'
+  '/favicon.ico',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/src/main.tsx',
+  '/src/styles.css'
 ];
+
+// Offline fallback page
+const OFFLINE_PAGE = '/offline.html';
 const urlsToCache = [
   '/',
   '/index.html',
