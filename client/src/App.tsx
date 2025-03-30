@@ -1,29 +1,30 @@
-import React from "react";
+import * as React from 'react';
+import { Switch, Route } from "wouter";
+import NotFound from "./pages/not-found";
+import { Button } from './components/ui/button';
+import { ThemeToggle } from './components/ui/theme-toggle';
 
-function App() {
-  const [count, setCount] = React.useState(0);
-  
+// Simplified welcome component
+function SimpleWelcome() {
   return (
-    <div className="min-h-screen bg-blue-100 flex flex-col items-center justify-center p-4">
-      <h1 className="text-3xl font-bold mb-4 text-blue-800">TTwW Answerbot</h1>
-      <p className="mb-4 text-gray-700">Simple test page for deployment verification</p>
-      
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <p className="mb-4 text-xl">Counter: {count}</p>
-        <button 
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-md transition-colors"
-          onClick={() => setCount(count + 1)}
-        >
-          Increment Counter
-        </button>
-      </div>
-      
-      <div className="mt-8 text-center text-gray-600 max-w-md">
-        <p className="mb-2">If you see this page and the counter increases when clicked, the application is working correctly!</p>
-        <p>Deployed version: {new Date().toLocaleDateString()}</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
+      <h1 className="text-3xl font-bold mb-6">TTwW Answerbot</h1>
+      <p className="text-lg mb-6 text-center max-w-md">
+        Your friendly assistant designed to help explain technology in a clear, easy-to-understand way.
+      </p>
+      <div className="flex items-center gap-4">
+        <Button>Get Started</Button>
+        <ThemeToggle />
       </div>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <Switch>
+      <Route path="/" component={SimpleWelcome} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}

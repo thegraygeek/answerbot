@@ -1,31 +1,33 @@
 
-import React from 'react';
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App";
 
-console.log('[TTwW] Application initializing...');
+// Super minimal static app with no hooks
+function App() {
+  return (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '100vh', 
+      padding: '1rem',
+      backgroundColor: '#93c5fd',
+      color: '#1e3a8a' 
+    }}>
+      <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
+        TTwW Answerbot
+      </h1>
+      <p>Minimal React Test - NO HOOKS</p>
+    </div>
+  );
+}
 
+// Get the container
 const container = document.getElementById("root");
 
-if (!container) {
-  console.error('[TTwW] Fatal: Root element not found!');
-  // Create a visible error message on the page if container is missing
-  document.body.innerHTML = `
-    <div style="font-family: sans-serif; text-align: center; padding: 40px;">
-      <h1 style="color: #e53e3e;">App Loading Error</h1>
-      <p>The application could not initialize properly. Root element not found.</p>
-    </div>
-  `;
-} else {
-  console.log('[TTwW] Mounting application...');
+// Render the app
+if (container) {
   const root = createRoot(container);
-  
-  root.render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-  
-  console.log('[TTwW] Application mounted successfully');
+  root.render(<App />);
 }
