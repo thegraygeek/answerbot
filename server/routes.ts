@@ -138,21 +138,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API route for getting AI response - no authentication required
   app.post("/api/chat", async (req, res) => {
     try {
+      console.log("Received chat API request:", req.body);
       const body = messageSchema.parse(req.body);
       
       if (!OPENAI_API_KEY) {
+        console.log("Missing OpenAI API key");
         return res.status(500).json({ 
           message: "OpenAI API key is not configured. Please add it to your environment variables." 
         });
       }
 
       try {
+        // Log session state before processing
+        console.log("Session before processing:", req.session);
+        
         // Initialize message history if not already present
         if (!req.session.messages) {
+          console.log("No messages in session, initializing empty array");
           req.session.messages = [];
         }
         
         // Add user message to history
+        console.log("Adding user message to history:", body.content);
         req.session.messages.push({
           role: 'user',
           content: body.content
@@ -160,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Prepare message history for OpenAI, including only the last 10 messages to keep context reasonable
         const messageHistory = req.session.messages.slice(-10);
+        console.log("Message history (last 10):", JSON.stringify(messageHistory));
         
         // Create properly typed messages for the OpenAI API
         const systemMessage: ChatCompletionMessageParam = { 
@@ -180,6 +188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
         
+        console.log("Calling OpenAI API with messages:", JSON.stringify(chatMessages));
+        
         // Call OpenAI API with the new client
         // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         const completion = await openai.chat.completions.create({
@@ -189,7 +199,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           max_tokens: 100  // Reduced to enforce 50-word limit (approx 100 tokens)
         });
 
+        console.log("OpenAI API response:", JSON.stringify(completion.choices));
+        
         const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
+        console.log("Final AI response:", aiResponse);
         
         // Create assistant message
         const assistantMessage = {
