@@ -58,9 +58,17 @@ export function useChat() {
       });
       
       // Add bot response after a small delay to simulate typing
-      const timeout = setTimeout(() => {
-        setMessages(prev => [...prev, data]);
-        setIsTyping(false);
+      let timeoutId: NodeJS.Timeout;
+      const timeout = new Promise<void>((resolve) => {
+        timeoutId = setTimeout(() => {
+          setMessages(prev => [...prev, data]);
+          setIsTyping(false);
+          resolve();
+        }, 500);
+      });
+
+      await timeout;
+      clearTimeout(timeoutId!);
       }, 500);
 
       // Cleanup function

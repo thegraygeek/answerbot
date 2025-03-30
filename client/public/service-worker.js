@@ -41,7 +41,16 @@ self.addEventListener('fetch', event => {
         return fetch(event.request).then(
           response => {
             // Check if we received a valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response) {
+              return new Response('Network error occurred', { status: 503 });
+            }
+            
+            if (response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            
+            // Don't cache errors
+            if (!response.ok) {
               return response;
             }
 
