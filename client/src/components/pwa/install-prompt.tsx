@@ -1,25 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { usePwa } from "@/hooks/use-pwa";
 
 export function PwaInstallPrompt() {
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
+  const { showInstallPrompt, hideInstallPrompt, installApp, isInstalled } = usePwa();
 
-  useEffect(() => {
-    const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    setIsIOS(isIOSDevice);
-
-    // Show prompt after 2 seconds
-    const timer = setTimeout(() => setShowPrompt(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  if (!showPrompt) return null;
+  if (!showInstallPrompt || isInstalled) return null;
 
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 mx-auto max-w-md">
-      <button onClick={() => setShowPrompt(false)} className="absolute top-2 right-2">
+      <button onClick={hideInstallPrompt} className="absolute top-2 right-2">
         <X className="h-4 w-4" />
       </button>
       <div className="flex flex-col space-y-4">
