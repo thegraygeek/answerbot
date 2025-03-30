@@ -75,7 +75,7 @@ export default function InputArea({ onSendMessage }: InputAreaProps) {
   
   return (
     <footer className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 p-4 transition-colors">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto pb-8 sm:pb-2">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <div className="relative">
             <Textarea

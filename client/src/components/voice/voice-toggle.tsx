@@ -45,7 +45,7 @@ export function VoiceToggle() {
   );
 
   return (
-    <div className="flex items-center space-x-2 sm:space-x-3">
+    <div className="flex items-center space-x-3 sm:space-x-4">
       {/* Voice input toggle button */}
       {hasRecognitionSupport ? (
         <TooltipProvider>
@@ -54,7 +54,7 @@ export function VoiceToggle() {
               <Button
                 variant="outline"
                 size="icon"
-                className={`p-2 sm:p-3 rounded-full shadow-sm ${
+                className={`p-2 sm:p-3 rounded-full shadow-sm h-10 w-10 sm:h-12 sm:w-12 ${
                   isListeningEnabled ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700'
                 }`}
                 onClick={toggleListening}
@@ -83,7 +83,7 @@ export function VoiceToggle() {
               <Button
                 variant="outline"
                 size="icon"
-                className={`p-2 sm:p-3 rounded-full shadow-sm ${
+                className={`p-2 sm:p-3 rounded-full shadow-sm h-10 w-10 sm:h-12 sm:w-12 ${
                   isSpeechEnabled ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700'
                 }`}
                 onClick={toggleSpeech}
@@ -117,7 +117,7 @@ export function VoiceToggle() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="p-2 sm:p-3 rounded-full shadow-sm bg-gray-100 dark:bg-gray-700"
+                    className="p-2 sm:p-3 rounded-full shadow-sm bg-gray-100 dark:bg-gray-700 h-10 w-10 sm:h-12 sm:w-12"
                     aria-label="Voice settings"
                   >
                     <Headphones className="h-4 w-4 sm:h-5 sm:w-5" />
