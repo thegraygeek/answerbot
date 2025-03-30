@@ -110,9 +110,12 @@ export class MemStorage implements IStorage {
   private saveUsersToJson() {
     try {
       const usersArray = Array.from(this.users.values());
-      fs.writeFileSync(USERS_JSON_PATH, JSON.stringify(usersArray, null, 2));
+      const tempPath = `${USERS_JSON_PATH}.tmp`;
+      fs.writeFileSync(tempPath, JSON.stringify(usersArray, null, 2));
+      fs.renameSync(tempPath, USERS_JSON_PATH);
     } catch (error) {
       console.error('Error saving users to JSON:', error);
+      throw new Error(`Failed to save users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

@@ -184,10 +184,19 @@ function Router() {
     }
   }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
 
-  if (authStatus.isLoading) {
+  if (authStatus.isLoading || authStatus.error) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex h-screen w-full items-center justify-center flex-col gap-2">
+        {authStatus.isLoading ? (
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        ) : (
+          <>
+            <div className="text-destructive">Failed to load auth status</div>
+            <button onClick={() => window.location.reload()} className="text-primary hover:underline">
+              Retry
+            </button>
+          </>
+        )}
       </div>
     );
   }
