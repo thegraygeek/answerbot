@@ -5,107 +5,178 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+// Local storage keys
+const INSTALL_PROMPT_SHOWN_KEY = 'install-prompt-shown';
+const INSTALL_PROMPT_DISMISSED_COUNT_KEY = 'install-prompt-dismissed-count';
+const INSTALL_PROMPT_LAST_SHOWN_KEY = 'install-prompt-last-shown';
+
 export function usePwa() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [forceShow, setForceShow] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
+      return;
     }
 
+    // Determine if we should show the prompt based on user history
+    const shouldShowPrompt = () => {
+      // If user is already in standalone mode, don't show prompt
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        return false;
+      }
+      
+      // If the prompt has been dismissed less than 3 times, show after 30 seconds
+      // If dismissed 3-5 times, show after 5 minutes
+      // If dismissed more than 5 times, show after 1 day
+      const dismissCount = parseInt(localStorage.getItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY) || '0', 10);
+      const lastShown = parseInt(localStorage.getItem(INSTALL_PROMPT_LAST_SHOWN_KEY) || '0', 10);
+      const now = Date.now();
+      
+      let timeThreshold = 30 * 1000; // 30 seconds by default
+      
+      if (dismissCount >= 3 && dismissCount < 5) {
+        timeThreshold = 5 * 60 * 1000; // 5 minutes
+      } else if (dismissCount >= 5) {
+        timeThreshold = 24 * 60 * 60 * 1000; // 1 day
+      }
+      
+      return (now - lastShown) > timeThreshold;
+    };
+
+    // Listen for the beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
       // Prevent Chrome 67 and earlier from automatically showing the prompt
       e.preventDefault();
       // Store the event for later use
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // Check if user has already interacted with the prompt
-      const hasSeenPrompt = localStorage.getItem('pwa_prompt_seen');
-      if (!hasSeenPrompt || Date.now() - parseInt(hasSeenPrompt) > 24 * 60 * 60 * 1000) {
-        // If user hasn't seen the prompt in 24 hours, show it
-        // Delay showing prompt to ensure better UX
-        setTimeout(() => {
-          setShowInstallPrompt(true);
-        }, 3000);
+      // Show prompt immediately if the user interacts with the app
+      // or based on the time threshold logic
+      if (forceShow || shouldShowPrompt()) {
+        setShowInstallPrompt(true);
+        localStorage.setItem(INSTALL_PROMPT_LAST_SHOWN_KEY, Date.now().toString());
       }
     };
 
+    // Listen for app installed event
     const handleAppInstalled = () => {
-      setIsInstalled(true);
+      // Clear all PWA-related local storage items
+      localStorage.removeItem(INSTALL_PROMPT_SHOWN_KEY);
+      localStorage.removeItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY);
+      localStorage.removeItem(INSTALL_PROMPT_LAST_SHOWN_KEY);
+      
+      // Clear the deferredPrompt
+      setDeferredPrompt(null);
+      // Hide install prompt
       setShowInstallPrompt(false);
-      localStorage.setItem('pwa_installed', 'true');
+      // Update installed state
+      setIsInstalled(true);
+      // Log the installation
+      console.log('App was installed');
     };
 
-    // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
-    // Check user interaction on page
-    const recordInteraction = () => {
-      if (!hasInteracted) {
-        setHasInteracted(true);
-        
-        // After user interacts and if we have the deferred prompt, show the install prompt
-        if (deferredPrompt && !isInstalled) {
-          setTimeout(() => {
-            setShowInstallPrompt(true);
-          }, 5000);
-        }
+    // Check if we should show the prompt or force show
+    const checkAndShowPrompt = () => {
+      if (deferredPrompt && (forceShow || shouldShowPrompt())) {
+        setShowInstallPrompt(true);
+        localStorage.setItem(INSTALL_PROMPT_LAST_SHOWN_KEY, Date.now().toString());
       }
     };
 
-    window.addEventListener('click', recordInteraction);
-    window.addEventListener('keydown', recordInteraction);
-    window.addEventListener('scroll', recordInteraction);
+    // Show prompt after user has interacted with the page for a while
+    const setupTimeThresholds = () => {
+      // First prompt: Show after 30 seconds of page interaction
+      setTimeout(() => {
+        checkAndShowPrompt();
+      }, 30 * 1000);
+
+      // Second prompt: If still not installed, try again after 2 minutes
+      setTimeout(() => {
+        checkAndShowPrompt();
+      }, 2 * 60 * 1000);
+    };
+
+    // Check if we can show the prompt immediately
+    checkAndShowPrompt();
+    setupTimeThresholds();
+
+    // User interaction triggers (click, scroll)
+    const userInteraction = () => {
+      setForceShow(true);
+      checkAndShowPrompt();
+    };
+
+    // Wait for some user interaction before showing the prompt
+    window.addEventListener('click', userInteraction, { once: true });
+    window.addEventListener('scroll', userInteraction, { once: true });
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
-      window.removeEventListener('click', recordInteraction);
-      window.removeEventListener('keydown', recordInteraction);
-      window.removeEventListener('scroll', recordInteraction);
+      window.removeEventListener('click', userInteraction);
+      window.removeEventListener('scroll', userInteraction);
     };
-  }, [deferredPrompt, hasInteracted, isInstalled]);
+  }, [deferredPrompt, forceShow]);
 
+  // Function to trigger the install prompt
   const installApp = async () => {
-    if (!deferredPrompt) return;
-    
-    try {
-      // Show the prompt
-      await deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
-      const choiceResult = await deferredPrompt.userChoice;
+    if (!deferredPrompt) {
+      console.log('Install prompt not available');
       
-      if (choiceResult.outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-        setIsInstalled(true);
-      } else {
-        console.log('User dismissed the install prompt');
-        // Record that user has seen the prompt
-        localStorage.setItem('pwa_prompt_seen', Date.now().toString());
+      // Try alternative methods for iOS
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+      if (isIOS) {
+        alert('To install this app on iOS: tap the share button, then "Add to Home Screen"');
       }
-    } catch (err) {
-      console.error('Error installing app:', err);
-    } finally {
-      // Clear the deferredPrompt so it can't be used again
-      setDeferredPrompt(null);
-      setShowInstallPrompt(false);
+      return;
     }
+
+    // Show the install prompt
+    deferredPrompt.prompt();
+
+    // Wait for the user to respond to the prompt
+    const choiceResult = await deferredPrompt.userChoice;
+    
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+      // Reset counters on acceptance
+      localStorage.removeItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY);
+    } else {
+      console.log('User dismissed the install prompt');
+      // Increment dismiss counter
+      const dismissCount = parseInt(localStorage.getItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY) || '0', 10);
+      localStorage.setItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY, (dismissCount + 1).toString());
+    }
+    
+    // We've used the prompt, and can't use it again, discard it
+    setDeferredPrompt(null);
+    setShowInstallPrompt(false);
+    localStorage.setItem(INSTALL_PROMPT_SHOWN_KEY, 'true');
+    localStorage.setItem(INSTALL_PROMPT_LAST_SHOWN_KEY, Date.now().toString());
   };
 
+  // Function to hide the install prompt
   const hideInstallPrompt = () => {
     setShowInstallPrompt(false);
-    localStorage.setItem('pwa_prompt_seen', Date.now().toString());
+    
+    // Increment dismiss counter
+    const dismissCount = parseInt(localStorage.getItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY) || '0', 10);
+    localStorage.setItem(INSTALL_PROMPT_DISMISSED_COUNT_KEY, (dismissCount + 1).toString());
+    localStorage.setItem(INSTALL_PROMPT_LAST_SHOWN_KEY, Date.now().toString());
   };
 
   return {
     isInstalled,
     showInstallPrompt,
-    hideInstallPrompt,
-    installApp
+    installApp,
+    hideInstallPrompt
   };
 }

@@ -1,98 +1,138 @@
-import { useState, useEffect } from 'react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from './components/theme-provider';
-import { Toaster } from './components/ui/toaster';
-import { PwaInstallPrompt } from './components/pwa/install-prompt';
-import { useLocation, LocationProvider } from '@/hooks/use-location';
-import { queryClient } from "@/lib/queryClient";
-import { Switch, Route } from "wouter";
+import { Switch, Route, Redirect, useLocation } from "wouter";
+import { queryClient, apiRequest } from "./lib/queryClient";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Welcome from "@/pages/welcome";
-import NotFound from "@/pages/not-found";
-import { Loader2 } from "lucide-react";
-import { useAuth, AuthProvider } from '@/hooks/use-auth';
+import { ThemeProvider } from "./hooks/use-theme";
+import { useState, useEffect } from "react";
+import { usePwa } from "./hooks/use-pwa";
+import InstallPrompt from "./components/pwa/install-prompt";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { authStatus } = useAuth();
-  const [, navigate] = useLocation();
+// Auth context interface
+interface AuthStatus {
+  isLoggedIn: boolean;
+  userId?: number;
+  firstName?: string;
+  email?: string;
+  isLoading: boolean;
+}
 
+function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
+  const { isLoggedIn, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+  
   useEffect(() => {
-    if (!authStatus.isLoading && !authStatus.isLoggedIn) {
-      navigate('/welcome');
+    if (!isLoading && !isLoggedIn) {
+      setLocation("/");
     }
-  }, [authStatus.isLoading, authStatus.isLoggedIn, navigate]);
-
-  if (authStatus.isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
+  }, [isLoggedIn, isLoading, setLocation]);
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
   }
+  
+  return isLoggedIn ? <Component {...rest} /> : null;
+}
 
-  return authStatus.isLoggedIn ? <>{children}</> : null;
+function useAuth() {
+  const [authStatus, setAuthStatus] = useState<AuthStatus>({
+    isLoggedIn: false,
+    isLoading: true
+  });
+  
+  const { data, isLoading, refetch } = useQuery<AuthStatus>({
+    queryKey: ['/api/auth/status'],
+    queryFn: async () => {
+      return apiRequest<AuthStatus>('/api/auth/status', { method: "GET" });
+    },
+    staleTime: 10000, // Refresh after 10 seconds
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+  
+  useEffect(() => {
+    if (!isLoading && data) {
+      setAuthStatus({
+        ...data,
+        isLoading: false
+      });
+    } else if (!isLoading) {
+      setAuthStatus(prev => ({
+        ...prev,
+        isLoading: false
+      }));
+    }
+  }, [data, isLoading]);
+
+  // Function to allow manual refresh of auth status
+  const refreshAuth = () => {
+    refetch();
+  };
+  
+  return {
+    ...authStatus,
+    refreshAuth
+  };
 }
 
 function Router() {
-  const { authStatus } = useAuth();
+  const { isLoggedIn, isLoading } = useAuth();
   const [location, setLocation] = useLocation();
-
+  
+  // If user is on home page and is logged in, redirect to chat
   useEffect(() => {
-    if (!authStatus.isLoading) {
-      if (authStatus.isLoggedIn && (location === "/" || location === "/welcome")) {
-        setLocation("/chat");
-      } else if (!authStatus.isLoggedIn && location === "/chat") {
-        setLocation("/");
-      }
+    if (!isLoading && isLoggedIn && location === "/") {
+      setLocation("/chat");
     }
-  }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
-
-  if (authStatus.isLoading || authStatus.error) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center flex-col gap-2">
-        {authStatus.isLoading ? (
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        ) : (
-          <>
-            <div className="text-destructive">Failed to load auth status</div>
-            <button onClick={() => window.location.reload()} className="text-primary hover:underline">
-              Retry
-            </button>
-          </>
-        )}
-      </div>
-    );
+  }, [isLoggedIn, isLoading, location, setLocation]);
+  
+  // If user is on chat page and is not logged in, redirect to home
+  useEffect(() => {
+    if (!isLoading && !isLoggedIn && location === "/chat") {
+      setLocation("/");
+    }
+  }, [isLoggedIn, isLoading, location, setLocation]);
+  
+  if (isLoading) {
+    return <div className="flex h-screen w-full items-center justify-center">Loading...</div>;
   }
-
+  
   return (
     <Switch>
-      <Route path="/">
-        <Welcome />
-      </Route>
-      <Route path="/chat">
-        <ProtectedRoute>
-          <Home />
-        </ProtectedRoute>
-      </Route>
-      <Route>
-        <NotFound />
-      </Route>
+      <Route path="/" component={isLoggedIn ? () => <Redirect to="/chat" /> : Welcome} />
+      <Route path="/chat" component={isLoggedIn ? Home : () => <Redirect to="/" />} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
 
-export default function App() {
+// PWA Install Prompt Component
+function PwaInstallPrompt() {
+  const { showInstallPrompt, installApp, hideInstallPrompt, isInstalled } = usePwa();
+  
+  if (isInstalled || !showInstallPrompt) {
+    return null;
+  }
+  
+  return (
+    <InstallPrompt 
+      onInstall={installApp} 
+      onDismiss={hideInstallPrompt}
+    />
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <LocationProvider>
-          <AuthProvider>
-            <Router />
-            <PwaInstallPrompt />
-            <Toaster />
-          </AuthProvider>
-        </LocationProvider>
+        <Router />
+        <PwaInstallPrompt />
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );
 }
+
+export default App;

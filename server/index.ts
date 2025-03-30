@@ -13,19 +13,16 @@ const SessionStore = MemoryStore(session);
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "ttw-answerbot-secret",
-    resave: false, // Only save session if changed
-    saveUninitialized: false, // Don't create session until something stored
-    rolling: true, // Reset expiration with each request
+    resave: true,
+    saveUninitialized: false,
     store: new SessionStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-      stale: false // Delete expired sessions
+      checkPeriod: 86400000 // prune expired entries every 24h
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Only use secure in production
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax',
-      path: '/'
+      sameSite: 'lax'
     }
   })
 );
@@ -66,14 +63,9 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-    
-    console.error(`[${new Date().toISOString()}] Error:`, err);
+
     res.status(status).json({ message });
-    
-    // Don't throw after handling
-    if (process.env.NODE_ENV === 'development') {
-      console.error(err.stack);
-    }
+    throw err;
   });
 
   // importantly only setup vite in development and after

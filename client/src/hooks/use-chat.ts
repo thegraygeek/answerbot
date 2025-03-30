@@ -1,90 +1,106 @@
 import { useState, useEffect } from 'react';
 import { Message } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
-// Define initial welcome message
-const WELCOME_MESSAGE: Message = {
-  role: 'assistant',
-  content: `Hello! 👋 I'm the TTwW Answerbot.
-
-I'm here to help explain technology in a way that's easy to understand. Feel free to ask me about:
-
-• How specific technologies work
-• The meaning of tech terms and acronyms
-• Troubleshooting common tech problems
-• Advice on learning new tech skills
-
-What would you like to know about today?`
-};
-
 export function useChat() {
-  const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([WELCOME_MESSAGE]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
+  const { toast } = useToast();
 
-  // Load messages from localStorage on initial load
+  // Load initial messages from localStorage
   useEffect(() => {
-    const savedMessages = localStorage.getItem('chat_messages');
+    const savedMessages = localStorage.getItem('chatMessages');
     if (savedMessages) {
       try {
-        const parsedMessages = JSON.parse(savedMessages);
-        setMessages(parsedMessages);
+        setMessages(JSON.parse(savedMessages));
       } catch (error) {
-        console.error('Error parsing saved messages:', error);
-        // Fallback to welcome message if there's an error
-        setMessages([WELCOME_MESSAGE]);
+        console.error('Failed to load chat history:', error);
       }
+    } else {
+      // Add welcome message if no history
+      const initialMessages: Message[] = [
+        {
+          role: 'assistant',
+          content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
+        },
+        {
+          role: 'assistant',
+          content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
+        }
+      ];
+      setMessages(initialMessages);
+      localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
     }
   }, []);
 
-  // Save messages to localStorage whenever they change
+  // Save messages to localStorage when they change
   useEffect(() => {
-    localStorage.setItem('chat_messages', JSON.stringify(messages));
+    if (messages.length > 0) {
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
   }, [messages]);
 
+  // Function to send a message and get a response
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    // Optimistically add user message to the chat
+    // Add user message
     const userMessage: Message = { role: 'user', content };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/chat', {
+      // Call API
+      const data = await apiRequest<Message>('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify(userMessage)
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      const data = await response.json();
       
-      // Add assistant response to chat
-      setMessages(prevMessages => [
-        ...prevMessages, 
-        { role: 'assistant', content: data.message }
-      ]);
+      // Add bot response after a small delay to simulate typing
+      setTimeout(() => {
+        setMessages(prev => [...prev, data]);
+        setIsTyping(false);
+      }, 500);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error getting response:', error);
+      setIsTyping(false);
+      
+      // Add error message from bot
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: "I'm sorry, I couldn't process your request. Please try again or check your internet connection."
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      
       toast({
         title: "Error",
-        description: "There was a problem connecting to the assistant. Please try again.",
-        variant: "destructive",
+        description: "Failed to get response from the server",
+        variant: "destructive"
       });
-    } finally {
-      setIsTyping(false);
     }
   };
 
+  // Clear chat history
   const clearChat = () => {
-    setMessages([WELCOME_MESSAGE]);
-    localStorage.removeItem('chat_messages');
+    const initialMessages: Message[] = [
+      {
+        role: 'assistant',
+        content: "👋 Welcome to TTwW Answerbot! I'm here to help you better understand technology with clear, straightforward explanations."
+      },
+      {
+        role: 'assistant',
+        content: "As you build your tech knowledge, feel free to ask about any technology concepts you'd like to understand better. Some ideas to get started:\n\n• How can I make my WiFi connection more reliable?\n• What security measures should I use for my online accounts?\n• What's the difference between cloud storage and local storage?\n• How can I troubleshoot common smartphone issues?"
+      }
+    ];
+    
+    setMessages(initialMessages);
+    localStorage.setItem('chatMessages', JSON.stringify(initialMessages));
+    
+    toast({
+      title: "Chat cleared",
+      description: "Your conversation history has been cleared"
+    });
   };
 
   return {
