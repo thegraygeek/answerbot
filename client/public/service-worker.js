@@ -1,34 +1,6 @@
+const CACHE_NAME = 'ttw-cache-v12';
+const RUNTIME_CACHE = 'ttw-runtime-v12';
 
-const CACHE_NAME = 'ttw-cache-v11';
-const RUNTIME_CACHE = 'ttw-runtime-v11';
-
-// Handle offline mode and network errors
-self.addEventListener('fetch', event => {
-  if (!navigator.onLine) {
-    event.respondWith(
-      caches.match('/offline.html')
-    );
-  }
-});
-
-// Improve cache management
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    Promise.all([
-      caches.keys().then(keys => Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME && key !== RUNTIME_CACHE) {
-            return caches.delete(key);
-          }
-        })
-      )),
-      clients.claim()
-    ])
-  );
-});
-
-// Cache expiration duration (24 hours)
-const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -41,13 +13,30 @@ const STATIC_RESOURCES = [
   '/welcome'
 ];
 
+// Cache expiration duration (24 hours)
+const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(STATIC_RESOURCES);
-      })
+      .then(cache => cache.addAll(STATIC_RESOURCES))
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    Promise.all([
+      caches.keys().then(keys => Promise.all(
+        keys.map(key => {
+          if (key !== CACHE_NAME && key !== RUNTIME_CACHE) {
+            return caches.delete(key);
+          }
+        })
+      )),
+      cleanExpiredCache(),
+      clients.claim()
+    ])
   );
 });
 
@@ -77,26 +66,12 @@ function cleanExpiredCache() {
   });
 }
 
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    Promise.all([
-      caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-});
-
 self.addEventListener('fetch', event => {
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
+  // Handle API requests
   if (event.request.url.includes('/api/')) {
     return event.respondWith(
       fetch(event.request)
@@ -113,6 +88,7 @@ self.addEventListener('fetch', event => {
     );
   }
 
+  // Handle navigation requests
   if (event.request.mode === 'navigate') {
     return event.respondWith(
       fetch(event.request)
@@ -120,13 +96,7 @@ self.addEventListener('fetch', event => {
     );
   }
 
-  if (event.request.url.includes('/welcome')) {
-    return event.respondWith(
-      fetch(event.request)
-        .catch(() => caches.match(event.request))
-    );
-  }
-
+  // Handle other requests
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -141,7 +111,7 @@ self.addEventListener('fetch', event => {
             }
 
             const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
+            caches.open(RUNTIME_CACHE)
               .then(cache => {
                 cache.put(event.request, responseToCache);
               });
@@ -149,6 +119,9 @@ self.addEventListener('fetch', event => {
             return response;
           })
           .catch(() => {
+            if (event.request.destination === 'image') {
+              return new Response();
+            }
             return caches.match('/offline.html');
           });
       })
