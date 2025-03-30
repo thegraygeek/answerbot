@@ -14,7 +14,7 @@ app.use(
   session({
     secret: process.env.SESSION_SECRET || "ttw-answerbot-secret",
     resave: true,
-    saveUninitialized: false,
+    saveUninitialized: true, // Changed to true to ensure new sessions get saved
     store: new SessionStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     }),

@@ -12,10 +12,21 @@ export function useChat() {
   const { data, isLoading, refetch } = useQuery<{ messages: Message[] }>({
     queryKey: ['chat-history'],
     queryFn: async () => {
-      return await apiRequest<{ messages: Message[] }>('/api/chat/history', { 
+      const response = await apiRequest<{ messages: Message[] }>('/api/chat/history', { 
         method: 'GET',
         on401: 'returnNull'
       });
+      
+      // Initialize with welcome message if no messages exist
+      if (!response || !response.messages || response.messages.length === 0) {
+        const welcomeMessage: Message = { 
+          role: 'assistant', 
+          content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?` 
+        };
+        return { messages: [welcomeMessage] };
+      }
+      
+      return response;
     },
     initialData: { messages: [] },
     staleTime: 30000, // 30 seconds

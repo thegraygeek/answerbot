@@ -25,8 +25,8 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API
 // Create OpenAI client
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Function to ensure session has messages initialized
-const ensureSessionMessages = (req: Request) => {
+// Function to ensure session has messages initialized - returns a promise
+const ensureSessionMessages = async (req: Request): Promise<Array<{ role: string, content: string }>> => {
   // Initialize the session if needed
   if (!req.session.messages || req.session.messages.length === 0) {
     // Create welcome message
@@ -37,6 +37,18 @@ const ensureSessionMessages = (req: Request) => {
     
     // Initialize messages with welcome message
     req.session.messages = [welcomeMessage];
+    
+    // Save the session explicitly
+    await new Promise<void>((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
   }
   
   return req.session.messages;
@@ -44,9 +56,18 @@ const ensureSessionMessages = (req: Request) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialization middleware to ensure all sessions have chat initialized
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
+    // Skip API routes as they have their own session handling
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    
     if (req.session) {
-      ensureSessionMessages(req);
+      try {
+        await ensureSessionMessages(req);
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+      }
     }
     next();
   });
@@ -63,31 +84,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get chat history - no authentication required
-  app.get("/api/chat/history", (req, res) => {
+  app.get("/api/chat/history", async (req, res) => {
     if (req.session) {
-      const messages = ensureSessionMessages(req);
-      return res.json({ messages });
+      try {
+        const messages = await ensureSessionMessages(req);
+        return res.json({ messages });
+      } catch (error) {
+        console.error("Failed to save session:", error);
+        return res.status(500).json({ message: "Session initialization failed" });
+      }
     } else {
       return res.status(500).json({ message: "Session initialization failed" });
     }
   });
   
   // Clear chat history and start new chat - no authentication required
-  app.post("/api/chat/clear", (req, res) => {
+  app.post("/api/chat/clear", async (req, res) => {
     if (req.session) {
-      // Create welcome message
-      const welcomeMessage = {
-        role: 'assistant',
-        content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
-      };
-      
-      // Reset messages to just the welcome message
-      req.session.messages = [welcomeMessage];
-      
-      return res.json({ 
-        message: 'Chat history cleared',
-        messages: [welcomeMessage]
-      });
+      try {
+        // Create welcome message
+        const welcomeMessage = {
+          role: 'assistant',
+          content: `Hello there! I'm the TTwW Answerbot. I provide concise tech answers in 50 words or less. What tech question can I help with today?`
+        };
+        
+        // Reset messages to just the welcome message
+        req.session.messages = [welcomeMessage];
+        
+        // Save the session explicitly
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
+        
+        return res.json({ 
+          message: 'Chat history cleared',
+          messages: [welcomeMessage]
+        });
+      } catch (error) {
+        console.error("Failed to save session:", error);
+        return res.status(500).json({ message: 'Failed to clear chat history' });
+      }
     } else {
       return res.status(500).json({ message: 'Failed to clear chat history' });
     }
@@ -163,6 +205,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.session.messages = req.session.messages.slice(-20);
         }
 
+        // Save the session explicitly
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+        });
+        
         return res.json(assistantMessage);
       } catch (error) {
         const openaiError = error as Error;
