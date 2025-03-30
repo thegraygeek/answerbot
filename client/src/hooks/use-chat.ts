@@ -58,18 +58,17 @@ export function useChat() {
       }
 
       // Add bot response after a small delay to simulate typing
+      let timeoutId: NodeJS.Timeout;
       await new Promise<void>((resolve) => {
-        const timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(() => {
           setMessages(prev => [...prev, data]);
           setIsTyping(false);
           resolve();
         }, 500);
-        
-        // Cleanup if component unmounts during timeout
-        if (timeoutId) {
-          return () => clearTimeout(timeoutId);
-        }
       });
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({

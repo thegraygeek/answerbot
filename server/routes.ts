@@ -156,9 +156,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Call OpenAI API with the new client
         // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o",
-          messages: [
+        const completion = await Promise.race([
+          openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
             { 
               role: "system", 
               content: "You are TTwW Answerbot, a friendly assistant who helps adult learners with entry-level tech skills understand technology better. Follow these guidelines when responding:\n\n1. Use clear, straightforward language that respects the user's intelligence while avoiding unnecessary jargon\n2. Explain concepts at an appropriate level for adults who have basic tech familiarity but want to improve\n3. Use helpful comparisons or analogies to common life experiences that adults would relate to\n4. Break down complex ideas into understandable components without being patronizing\n5. Introduce and briefly explain technical terms to help build the user's vocabulary\n6. Keep answers concise, practical and relevant to everyday use cases\n7. Assume the person has basic tech exposure (smartphones, email, web browsing) but wants deeper understanding" 
@@ -167,7 +168,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ],
           temperature: 0.7,
           max_tokens: 1000
-        });
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('OpenAI API timeout')), 30000)
+        )
+      ]) as OpenAI.Chat.Completions.ChatCompletion;
 
         const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
 
