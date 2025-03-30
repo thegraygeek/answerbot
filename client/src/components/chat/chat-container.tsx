@@ -1,11 +1,7 @@
 import { forwardRef } from "react";
 import ChatMessage from "./chat-message";
 import TypingIndicator from "./typing-indicator";
-// Define Message type directly to avoid import issues
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { Message } from "@shared/schema";
 
 interface ChatContainerProps {
   messages: Message[];

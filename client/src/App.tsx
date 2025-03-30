@@ -5,10 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import { ThemeProvider } from "./hooks/use-theme";
-import { VoiceProvider } from "./hooks/use-voice-context";
 import { usePwa } from "./hooks/use-pwa";
 import InstallPromptComponent from "./components/pwa/install-prompt";
-import { VoiceToggle } from "./components/voice/voice-toggle";
 
 // PWA Install Prompt Component
 function PwaInstallPrompt() {
@@ -26,28 +24,16 @@ function PwaInstallPrompt() {
   );
 }
 
-// Voice Controls Component
-function VoiceControls() {
-  return (
-    <div className="fixed sm:bottom-24 bottom-20 sm:right-6 right-3 z-40 shadow-lg rounded-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-2">
-      <VoiceToggle />
-    </div>
-  );
-}
-
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <VoiceProvider>
-          <Switch>
-            <Route path="/" component={Home} />
-            <Route component={NotFound} />
-          </Switch>
-          <PwaInstallPrompt />
-          <VoiceControls />
-          <Toaster />
-        </VoiceProvider>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route component={NotFound} />
+        </Switch>
+        <PwaInstallPrompt />
+        <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
   );
