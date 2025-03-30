@@ -36,12 +36,16 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
     }))
 }));
 
+let syncPromise: Promise<void> | null = null;
+
 async function syncPendingRequests() {
   const store = useOfflineStore.getState();
-  if (store.syncInProgress) return;
+  if (store.syncInProgress || syncPromise) return;
 
   store.setSyncStatus(true);
   const requests = [...store.pendingRequests];
+  
+  syncPromise = (async () => {
 
   try {
     for (const request of requests) {
@@ -84,12 +88,18 @@ async function syncPendingRequests() {
     console.error('Sync failed:', error);
   } finally {
     store.setSyncStatus(false);
-    // Trigger a retry after 30 seconds if there are still pending requests
+    syncPromise = null;
+    
+    // Exponential backoff for retries
     const remainingRequests = useOfflineStore.getState().pendingRequests;
     if (remainingRequests.length > 0) {
-      setTimeout(syncPendingRequests, 30000);
+      const backoffTime = Math.min(30000 * Math.pow(2, Math.floor(remainingRequests[0].retryCount / 3)), 300000);
+      setTimeout(syncPendingRequests, backoffTime);
     }
   }
+})();
+
+return syncPromise;
 }
 
 export function initializeOfflineHandler() {
