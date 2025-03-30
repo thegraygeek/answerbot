@@ -53,6 +53,10 @@ export function useChat() {
         body: JSON.stringify({ content })
       });
 
+      if (!data) {
+        throw new Error('No response from server');
+      }
+
       // Add bot response after a small delay to simulate typing
       await new Promise<void>((resolve) => {
         const timeoutId = setTimeout(() => {
