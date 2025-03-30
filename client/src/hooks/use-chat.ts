@@ -73,21 +73,36 @@ export function useChat() {
       // Add error message from bot
       const errorMessage: Message = {
         role: 'assistant',
-        content: "I'm sorry, I couldn't process your request. Please try again or check your internet connection."
+        content: error instanceof Response && error.status === 401 
+          ? "Your session has expired. Please log in again."
+          : "I'm sorry, I couldn't process your request. Please try again."
       };
       setMessages(prev => [...prev, errorMessage]);
       
-      const errorDescription = error instanceof Error ? error.message : "Failed to get response from the server";
+      // Handle different types of errors
+      let errorDescription = "Failed to get response from the server";
+      if (error instanceof Error) {
+        errorDescription = error.message;
+      } else if (error instanceof Response) {
+        switch (error.status) {
+          case 401:
+            errorDescription = "Session expired - redirecting to login";
+            setTimeout(() => window.location.href = '/', 2000);
+            break;
+          case 429:
+            errorDescription = "Too many requests, please wait a moment";
+            break;
+          case 500:
+            errorDescription = "Server error, please try again later";
+            break;
+        }
+      }
+      
       toast({
         title: "Error",
         description: errorDescription,
         variant: "destructive"
       });
-      
-      // Check if error is due to auth
-      if (error instanceof Response && error.status === 401) {
-        window.location.href = '/';
-      }
     }
   };
 
