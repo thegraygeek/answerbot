@@ -1,22 +1,24 @@
+
 import { create } from 'zustand';
 import { queryClient } from '../lib/query';
 
 interface OfflineStore {
   isOnline: boolean;
   syncInProgress: boolean;
+  pendingRequests: PendingRequest[];
   lastSyncTime?: number;
-  pendingRequests: Array<{
-    url: string;
-    method: string;
-    body?: any;
-    timestamp: number;
-    retryCount: number;
-    error?: string;
-  }>;
   setOnline: (status: boolean) => void;
   setSyncStatus: (inProgress: boolean) => void;
-  addPendingRequest: (request: any) => void;
+  addPendingRequest: (request: PendingRequest) => void;
   removePendingRequest: (url: string) => void;
+}
+
+interface PendingRequest {
+  url: string;
+  method: string;
+  body?: any;
+  retryCount: number;
+  error?: string;
 }
 
 export const useOfflineStore = create<OfflineStore>((set) => ({
@@ -27,11 +29,7 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
   setSyncStatus: (inProgress) => set({ syncInProgress: inProgress }),
   addPendingRequest: (request) => 
     set((state) => ({ 
-      pendingRequests: [...state.pendingRequests, { 
-        ...request, 
-        timestamp: Date.now(),
-        retryCount: 0 
-      }] 
+      pendingRequests: [...state.pendingRequests, request]
     })),
   removePendingRequest: (url) =>
     set((state) => ({
@@ -49,7 +47,6 @@ async function syncPendingRequests() {
   try {
     for (const request of requests) {
       if (request.retryCount >= 3) {
-        console.warn(`Request to ${request.url} failed after 3 retries`);
         store.removePendingRequest(request.url);
         continue;
       }
@@ -88,7 +85,7 @@ export function initializeOfflineHandler() {
   window.addEventListener('online', () => {
     store.setOnline(true);
     queryClient.invalidateQueries();
-    syncPendingRequests();
+    void syncPendingRequests();
   });
 
   window.addEventListener('offline', () => {
