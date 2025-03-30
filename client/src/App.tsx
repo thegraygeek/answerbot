@@ -196,7 +196,7 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={authStatus.isLoggedIn ? () => <Redirect to="/chat" /> : Welcome} />
+      <Route path="/" component={Welcome} />
       <Route path="/chat" component={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route component={NotFound} />
     </Switch>

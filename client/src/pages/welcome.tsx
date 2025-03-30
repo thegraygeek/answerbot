@@ -34,6 +34,9 @@ export default function Welcome() {
         navigate('/chat');
         return;
       }
+    }).catch(error => {
+      console.error('Error checking auth status:', error);
+      navigate('/');
     });
 
     try {
