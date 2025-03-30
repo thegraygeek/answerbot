@@ -56,7 +56,7 @@ export function useChat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ message: content }),
       });
 
       if (!response.ok) {
@@ -68,7 +68,7 @@ export function useChat() {
       // Add assistant response to chat
       setMessages(prevMessages => [
         ...prevMessages, 
-        { role: 'assistant', content: data.content }
+        { role: 'assistant', content: data.message }
       ]);
     } catch (error) {
       console.error('Error sending message:', error);
