@@ -1,7 +1,10 @@
 
 import { useCallback, useContext, useEffect, useState, createContext } from 'react';
 
-type LocationContextType = [string, (path: string) => void];
+type LocationContextType = {
+  path: string;
+  navigate: (path: string) => void;
+};
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
@@ -20,7 +23,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   }, []);
   
   return (
-    <LocationContext.Provider value={[path, navigate]}>
+    <LocationContext.Provider value={{ path, navigate }}>
       {children}
     </LocationContext.Provider>
   );
@@ -31,5 +34,13 @@ export function useLocation() {
   if (!context) {
     throw new Error('useLocation must be used within a LocationProvider');
   }
-  return context;
+  return context.path;
+}
+
+export function useNavigate() {
+  const context = useContext(LocationContext);
+  if (!context) {
+    throw new Error('useNavigate must be used within a LocationProvider');
+  }
+  return context.navigate;
 }
