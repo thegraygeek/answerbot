@@ -4,6 +4,9 @@ import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Set to production mode to serve built files
+process.env.NODE_ENV = "production";
+
 // Debug mode to show more detailed logs
 const DEBUG = true;
 
