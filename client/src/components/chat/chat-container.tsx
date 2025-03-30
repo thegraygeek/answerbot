@@ -1,3 +1,4 @@
+
 import { forwardRef } from "react";
 import ChatMessage from "./chat-message";
 import TypingIndicator from "./typing-indicator";
@@ -18,8 +19,6 @@ const ChatContainer = forwardRef<HTMLDivElement, ChatContainerProps>(
           {visibleMessages.map((message, index) => (
             <ChatMessage 
               key={`${message.role}-${index}-${message.content.substring(0, 10)}`}
-            <ChatMessage 
-              key={`${message.role}-${message.content.substring(0, 20)}`}
               role={message.role}
               content={message.content}
             />
