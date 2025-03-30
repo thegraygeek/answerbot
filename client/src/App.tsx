@@ -175,14 +175,12 @@ function Router() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authStatus.isLoading && authStatus.isLoggedIn && location === "/") {
-      setLocation("/chat");
-    }
-  }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
-
-  useEffect(() => {
-    if (!authStatus.isLoading && !authStatus.isLoggedIn && location === "/chat") {
-      setLocation("/");
+    if (!authStatus.isLoading) {
+      if (authStatus.isLoggedIn && location === "/") {
+        setLocation("/chat");
+      } else if (!authStatus.isLoggedIn && location === "/chat") {
+        setLocation("/");
+      }
     }
   }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
 

@@ -29,15 +29,17 @@ export default function Welcome() {
   // Try to load saved form data from localStorage on component mount
   useEffect(() => {
     // Check if user is already logged in
-    apiRequest('/api/auth/status').then(status => {
-      if (status.isLoggedIn) {
-        navigate('/chat');
-        return;
+    const storedFormData = localStorage.getItem('registration_form');
+    if (storedFormData) {
+      try {
+        const parsedData = JSON.parse(storedFormData);
+        setSavedData(parsedData);
+        form.reset(parsedData);
+      } catch (error) {
+        console.error('Error parsing stored form data:', error);
       }
-    }).catch(error => {
-      console.error('Error checking auth status:', error);
-      navigate('/');
-    });
+    }
+    setInitialLoad(false);
 
     try {
       const savedFormData = localStorage.getItem('registration_form_data');
