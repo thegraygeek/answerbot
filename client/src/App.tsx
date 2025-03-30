@@ -3,6 +3,16 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from './components/ui/toaster';
 import { PwaInstallPrompt } from './components/pwa/install-prompt';
+
+export const useAuth = () => {
+  // Implement your auth logic here
+  return {
+    user: null,
+    login: async () => {},
+    logout: async () => {},
+    isAuthenticated: false
+  };
+};
 import { useLocation, useNavigate } from './hooks/use-location';
 import { queryClient } from './lib/query-client';
 import { Switch, Route, Redirect } from "wouter";
