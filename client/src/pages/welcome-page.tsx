@@ -13,7 +13,7 @@ export default function WelcomePage() {
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
-              src={theme === "dark" ? "/attached_assets/TTwW Logo v4 White.png" : "/attached_assets/TTwW Logo v4.png"} 
+              src={theme === "dark" ? "/ttww-logo-light.png" : "/ttww-logo-dark.png"} 
               alt="TTwW Logo" 
               className="w-10 h-10 object-contain"
             />

@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, createContext } from "react";
 import { ThemeProvider } from "./components/theme-provider";
 import { Route, Switch } from "wouter";
 import WelcomePage from "./pages/welcome-page";
@@ -7,8 +7,15 @@ import NotFound from "./pages/not-found";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "./components/ui/toaster";
 
-// Create a QueryClient instance
-const queryClient = new QueryClient();
+// Create a QueryClient instance with retry options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      retryDelay: 1000,
+    },
+  },
+});
 
 // Create a context for navigation
 interface NavigationContextType {
@@ -35,14 +42,14 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system" storageKey="ttw-theme">
         <NavigationContext.Provider value={navigationValue}>
-          <main className="min-h-screen bg-background">
+          <div className="min-h-screen bg-background">
             <Switch>
               <Route path="/" component={WelcomePage} />
               <Route path="/chat" component={ChatPage} />
               <Route component={NotFound} />
             </Switch>
-          </main>
-          <Toaster />
+            <Toaster />
+          </div>
         </NavigationContext.Provider>
       </ThemeProvider>
     </QueryClientProvider>
