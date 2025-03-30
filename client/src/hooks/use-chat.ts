@@ -54,15 +54,15 @@ export function useChat() {
       });
 
       // Add bot response after a small delay to simulate typing
-      const timeoutPromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
+      await new Promise<void>((resolve) => {
+        const timeoutId = setTimeout(() => {
           setMessages(prev => [...prev, data]);
           setIsTyping(false);
           resolve();
         }, 500);
+        
+        return () => clearTimeout(timeoutId);
       });
-
-      await timeoutPromise;
     } catch (error) {
       console.error('Failed to send message:', error);
       toast({
