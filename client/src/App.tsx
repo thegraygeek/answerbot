@@ -1,27 +1,26 @@
 import React from "react";
 
 function App() {
-  // Simple state to test if React is working
   const [count, setCount] = React.useState(0);
   
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <h1 className="text-2xl font-bold mb-4">TTwW Answerbot - Basic Test Page</h1>
-      <p className="mb-4">If you can see this page, the basic React setup is working correctly!</p>
+    <div className="min-h-screen bg-blue-100 flex flex-col items-center justify-center p-4">
+      <h1 className="text-3xl font-bold mb-4 text-blue-800">TTwW Answerbot</h1>
+      <p className="mb-4 text-gray-700">Simple test page for deployment verification</p>
       
-      <div className="bg-white p-4 rounded shadow-md">
-        <p className="mb-2">Counter: {count}</p>
+      <div className="bg-white p-6 rounded-lg shadow-lg">
+        <p className="mb-4 text-xl">Counter: {count}</p>
         <button 
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2.5 rounded-md transition-colors"
           onClick={() => setCount(count + 1)}
         >
-          Increment
+          Increment Counter
         </button>
       </div>
       
-      <div className="mt-8 text-gray-600">
-        <p>This is a simplified test page to verify React functionality.</p>
-        <p>We'll add the full application features once we confirm everything is working.</p>
+      <div className="mt-8 text-center text-gray-600 max-w-md">
+        <p className="mb-2">If you see this page and the counter increases when clicked, the application is working correctly!</p>
+        <p>Deployed version: {new Date().toLocaleDateString()}</p>
       </div>
     </div>
   );
