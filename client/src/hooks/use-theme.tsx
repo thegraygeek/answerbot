@@ -9,23 +9,12 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
-
-export { ThemeProvider };
-
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Get from localStorage or default to 'system'
     const savedTheme = localStorage.getItem('theme') as Theme;
     return savedTheme || 'system';
   });
@@ -37,17 +26,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
 
   useEffect(() => {
     const root = document.documentElement;
-    
-    // Handle system preference
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     if (theme === 'dark' || (theme === 'system' && prefersDark)) {
       root.classList.add('dark');
     } else {
       root.classList.remove('dark');
     }
-    
-    // Update meta theme-color based on current mode
+
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (metaThemeColor) {
       metaThemeColor.setAttribute(
@@ -57,23 +43,21 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [theme]);
 
-  // Listen for system preference changes
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
     const handleChange = () => {
       if (theme === 'system') {
         const prefersDark = mediaQuery.matches;
         document.documentElement.classList.toggle('dark', prefersDark);
-        
-        // Update meta theme-color
+
         const metaThemeColor = document.querySelector('meta[name="theme-color"]');
         if (metaThemeColor) {
           metaThemeColor.setAttribute('content', prefersDark ? '#111827' : '#4F46E5');
         }
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
