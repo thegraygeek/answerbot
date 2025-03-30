@@ -5,7 +5,6 @@ const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
 
-// Resources to precache
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -15,16 +14,62 @@ const STATIC_RESOURCES = [
   '/icons/icon-192x192.png'
 ];
 
-// Install event - precache static assets
+// Network first strategy with timeout
+async function networkFirstWithTimeout(request, cacheName, timeout = 3000) {
+  try {
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Network timeout')), timeout);
+    });
+    const networkPromise = fetch(request);
+    const response = await Promise.race([networkPromise, timeoutPromise]);
+    
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(request, response.clone());
+      return response;
+    }
+    throw new Error('Network response was not ok');
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    throw error;
+  }
+}
+
+// Cache first strategy
+async function cacheFirst(request, cacheName) {
+  const cachedResponse = await caches.match(request);
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+  
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      await cache.put(request, response.clone());
+      return response;
+    }
+    throw new Error('Network response was not ok');
+  } catch (error) {
+    console.error('Cache first fetch failed:', error);
+    throw error;
+  }
+}
+
+// Install event handler
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then(cache => cache.addAll(STATIC_RESOURCES))
       .then(() => self.skipWaiting())
+      .catch(error => console.error('Cache installation failed:', error))
   );
 });
 
-// Activate event - cleanup old caches
+// Activate event handler
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -41,66 +86,30 @@ self.addEventListener('activate', event => {
         );
       })
       .then(() => self.clients.claim())
+      .catch(error => console.error('Cache cleanup failed:', error))
   );
 });
-
-// Network first strategy for API requests
-async function networkFirst(request) {
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      const cache = await caches.open(API_CACHE);
-      await cache.put(request, networkResponse.clone());
-      return networkResponse;
-    }
-    throw new Error('Network response not ok');
-  } catch (error) {
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    throw error;
-  }
-}
-
-// Cache first strategy for static assets
-async function cacheFirst(request) {
-  const cachedResponse = await caches.match(request);
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-  try {
-    const networkResponse = await fetch(request);
-    const cache = await caches.open(STATIC_CACHE);
-    await cache.put(request, networkResponse.clone());
-    return networkResponse;
-  } catch (error) {
-    if (request.mode === 'navigate') {
-      return caches.match('/offline.html');
-    }
-    throw error;
-  }
-}
 
 // Fetch event handler
 self.addEventListener('fetch', event => {
   const request = event.request;
-  
+
   // Handle API requests
   if (request.url.includes('/api/')) {
     event.respondWith(
-      networkFirst(request)
+      networkFirstWithTimeout(request, API_CACHE)
         .catch(error => {
           console.error('API request failed:', error);
           return new Response(
             JSON.stringify({
-              error: 'Service temporarily unavailable',
+              error: navigator.onLine ? 'Service temporarily unavailable' : 'You are offline',
               status: 'error'
             }),
             {
-              status: 503,
+              status: navigator.onLine ? 503 : 504,
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store'
               }
             }
           );
@@ -112,7 +121,7 @@ self.addEventListener('fetch', event => {
   // Handle navigation requests
   if (request.mode === 'navigate') {
     event.respondWith(
-      cacheFirst(request)
+      networkFirstWithTimeout(request, STATIC_CACHE)
         .catch(() => caches.match('/offline.html'))
     );
     return;
@@ -120,21 +129,15 @@ self.addEventListener('fetch', event => {
 
   // Handle static assets
   event.respondWith(
-    cacheFirst(request)
+    cacheFirst(request, STATIC_CACHE)
       .catch(error => {
         console.error('Static asset fetch failed:', error);
-        return new Response('Resource not available', { status: 404 });
+        return new Response('Resource not available', { 
+          status: 404,
+          headers: { 'Content-Type': 'text/plain' }
+        });
       })
   );
-});
-
-// Error handling
-self.addEventListener('error', event => {
-  console.error('Service worker error:', event);
-});
-
-self.addEventListener('unhandledrejection', event => {
-  console.error('Unhandled promise rejection:', event.reason);
 });
 
 // Background sync for offline operations
@@ -162,3 +165,12 @@ async function syncPendingRequests() {
     }
   }
 }
+
+// Error handling
+self.addEventListener('error', event => {
+  console.error('Service worker error:', event);
+});
+
+self.addEventListener('unhandledrejection', event => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
