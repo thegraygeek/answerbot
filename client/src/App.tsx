@@ -1,17 +1,18 @@
-import { Switch, Route, Redirect, useLocation } from "wouter";
-import { queryClient, apiRequest } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import NotFound from "@/pages/not-found";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './components/theme-provider';
+import { Toaster } from './components/ui/toaster';
+import { PwaInstallPrompt } from './components/pwa/install-prompt';
+import { useLocation, useNavigate } from './hooks/use-location';
+import { queryClient } from './lib/query-client';
+import { Switch, Route, Redirect } from "wouter";
+import { apiRequest } from "./lib/queryClient";
 import Home from "@/pages/home";
 import Welcome from "@/pages/welcome";
-import { ThemeProvider } from "./hooks/use-theme";
-import { useState, useEffect, createContext, useContext } from "react";
-import { usePwa } from "./hooks/use-pwa";
-import InstallPrompt from "./components/pwa/install-prompt";
+import NotFound from "@/pages/not-found";
 import { Loader2 } from "lucide-react";
 
-// Auth context interface
+
 interface AuthStatus {
   isLoggedIn: boolean;
   userId?: number;
@@ -20,77 +21,21 @@ interface AuthStatus {
   isLoading: boolean;
 }
 
-// Create auth context
-const AuthContext = createContext<AuthStatus>({
-  isLoggedIn: false,
-  isLoading: true
-});
-
-// Auth provider component
-function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authState, setAuthState] = useState<AuthStatus>({
-    isLoggedIn: false,
-    isLoading: true
-  });
-
-  useEffect(() => {
-    // Check auth status on mount
-    apiRequest('/api/auth/status')
-      .then(status => {
-        setAuthState({
-          ...status,
-          isLoading: false
-        });
-      })
-      .catch(() => {
-        setAuthState(prev => ({ ...prev, isLoading: false }));
-      });
-  }, []);
-
-  return (
-    <AuthContext.Provider value={authState}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-// Protected route component
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const auth = useContext(AuthContext);
-  const [, navigate] = useLocation();
-
-  useEffect(() => {
-    if (!auth.isLoading && !auth.isLoggedIn) {
-      navigate('/welcome');
-    }
-  }, [auth.isLoading, auth.isLoggedIn]);
-
-  if (auth.isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
-  }
-
-  return auth.isLoggedIn ? <>{children}</> : null;
-}
-
-interface AuthContextType extends AuthStatus {
+type AuthContextType = {
+  authStatus: AuthStatus;
+  setAuthStatus: React.Dispatch<React.SetStateAction<AuthStatus>>;
   refreshAuth: () => void;
   logout: () => Promise<void>;
-}
+};
 
-// Create Auth Context
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Auth Provider Component
 function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authStatus, setAuthStatus] = useState<AuthStatus>({
     isLoggedIn: false,
     isLoading: true
   });
-  
+
   // Check if user previously logged in (local storage backup)
   useEffect(() => {
     try {
@@ -108,7 +53,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Error reading auth from localStorage:', error);
     }
   }, []);
-  
+
   const { data, isLoading, refetch } = useQuery<AuthStatus>({
     queryKey: ['/api/auth/status'],
     queryFn: async () => {
@@ -117,7 +62,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     staleTime: 10000, // Refresh after 10 seconds
     refetchInterval: 30000, // Refetch every 30 seconds
   });
-  
+
   useEffect(() => {
     if (!isLoading && data) {
       // Update auth status from API response
@@ -125,7 +70,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
         ...data,
         isLoading: false
       });
-      
+
       // Save to localStorage for persistence
       if (data.isLoggedIn) {
         localStorage.setItem('auth_status', JSON.stringify({
@@ -154,7 +99,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     }));
     refetch();
   };
-  
+
   // Function to handle logout
   const logout = async () => {
     try {
@@ -172,10 +117,11 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Logout error:', error);
     }
   };
-  
+
   return (
     <AuthContext.Provider value={{
-      ...authStatus,
+      authStatus,
+      setAuthStatus,
       refreshAuth,
       logout
     }}>
@@ -184,9 +130,7 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Custom hook to use the auth context
-// Export the auth hook so it can be used in other components
-export function useAuth() {
+function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -194,108 +138,63 @@ export function useAuth() {
   return context;
 }
 
-function AuthenticatedRoute({ component: Component, ...rest }: { component: React.ComponentType<any>, path: string }) {
-  const { isLoggedIn, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-  
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { authStatus } = useAuth();
+  const [, navigate] = useLocation();
+
   useEffect(() => {
-    if (!isLoading && !isLoggedIn) {
-      setLocation("/");
+    if (!authStatus.isLoading && !authStatus.isLoggedIn) {
+      navigate('/welcome');
     }
-  }, [isLoggedIn, isLoading, setLocation]);
-  
-  if (isLoading) {
+  }, [authStatus.isLoading, authStatus.isLoggedIn, navigate]);
+
+  if (authStatus.isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin" />
       </div>
     );
   }
-  
-  return isLoggedIn ? <Component {...rest} /> : null;
+
+  return authStatus.isLoggedIn ? <>{children}</> : null;
 }
 
+
 function Router() {
-  const { isLoggedIn, isLoading } = useAuth();
+  const { authStatus } = useAuth();
   const [location, setLocation] = useLocation();
-  
-  // If user is on home page and is logged in, redirect to chat
+  const navigate = useNavigate();
+
   useEffect(() => {
-    if (!isLoading && isLoggedIn && location === "/") {
+    if (!authStatus.isLoading && authStatus.isLoggedIn && location === "/") {
       setLocation("/chat");
     }
-  }, [isLoggedIn, isLoading, location, setLocation]);
-  
-  // If user is on chat page and is not logged in, redirect to home
+  }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
+
   useEffect(() => {
-    if (!isLoading && !isLoggedIn && location === "/chat") {
+    if (!authStatus.isLoading && !authStatus.isLoggedIn && location === "/chat") {
       setLocation("/");
     }
-  }, [isLoggedIn, isLoading, location, setLocation]);
-  
-  if (isLoading) {
+  }, [authStatus.isLoggedIn, authStatus.isLoading, location, setLocation]);
+
+  if (authStatus.isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-  
+
   return (
     <Switch>
-      <Route path="/" component={isLoggedIn ? () => <Redirect to="/chat" /> : Welcome} />
-      <Route path="/chat" component={isLoggedIn ? Home : () => <Redirect to="/" />} />
+      <Route path="/" component={authStatus.isLoggedIn ? () => <Redirect to="/chat" /> : Welcome} />
+      <Route path="/chat" component={<ProtectedRoute><Home /></ProtectedRoute>} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// PWA Install Prompt Component
-function PwaInstallPrompt() {
-  const { showInstallPrompt, installApp, hideInstallPrompt, isInstalled } = usePwa();
-  const { isLoggedIn } = useAuth();
-  
-  // Only show install prompt if user is logged in
-  if (isInstalled || !showInstallPrompt || !isLoggedIn) {
-    return null;
-  }
-  
-  return (
-    <InstallPrompt 
-      onInstall={installApp} 
-      onDismiss={hideInstallPrompt}
-    />
-  );
-}
-
-function Router() {
-  const auth = useContext(AuthContext);
-  const [location] = useLocation();
-
-  // Redirect to chat if logged in and trying to access welcome
-  useEffect(() => {
-    if (auth.isLoggedIn && location === '/welcome') {
-      navigate('/chat');
-    }
-  }, [auth.isLoggedIn, location]);
-
-  return (
-    <Switch>
-      <Route path="/welcome" component={Welcome} />
-      <Route path="/chat">
-        <ProtectedRoute>
-          <Home />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/">
-        <Redirect to={auth.isLoggedIn ? '/chat' : '/welcome'} />
-      </Route>
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -308,5 +207,3 @@ function App() {
     </QueryClientProvider>
   );
 }
-
-export default App;
