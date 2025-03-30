@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { messageSchema, registrationSchema, insertUserSchema } from "@shared/schema";
 import { z } from "zod";
-import OpenAI from "openai";
+import { getChatResponse } from "./openai";
 
 // Extend Express Request type to include session
 declare module 'express-session' {
@@ -14,11 +14,6 @@ declare module 'express-session' {
     isLoggedIn?: boolean;
   }
 }
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY || "";
-
-// Create OpenAI client
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // Middleware to check if user is authenticated
 const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
@@ -143,50 +138,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API route for getting AI response - protected by auth
-  app.post("/api/chat", isAuthenticated, async (req, res) => {
+  app.post("/api/chat", async (req, res) => {
     try {
       const body = messageSchema.parse(req.body);
       
-      if (!OPENAI_API_KEY) {
-        return res.status(500).json({ 
-          message: "OpenAI API key is not configured. Please add it to your environment variables." 
-        });
-      }
-
       try {
-        // Call OpenAI API with the new client
-        // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-        const completion = await Promise.race([
-          openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-            { 
-              role: "system", 
-              content: "You are TTwW Answerbot, a friendly assistant who helps adult learners with entry-level tech skills understand technology better. Follow these guidelines when responding:\n\n1. Use clear, straightforward language that respects the user's intelligence while avoiding unnecessary jargon\n2. Explain concepts at an appropriate level for adults who have basic tech familiarity but want to improve\n3. Use helpful comparisons or analogies to common life experiences that adults would relate to\n4. Break down complex ideas into understandable components without being patronizing\n5. Introduce and briefly explain technical terms to help build the user's vocabulary\n6. Keep answers concise, practical and relevant to everyday use cases\n7. Assume the person has basic tech exposure (smartphones, email, web browsing) but wants deeper understanding" 
-            },
-            { role: "user", content: body.content }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000
-        }),
-        new Promise((_, reject) => {
-          const timeoutId = setTimeout(() => {
-            reject(new Error('OpenAI API request timed out after 30 seconds'));
-          }, 30000);
-          return () => clearTimeout(timeoutId);
-        })
-      ]).catch(error => {
-        if (error.message.includes('timed out')) {
-          throw new Error('Request timeout. Please try again with a shorter message.');
-        }
-        throw error;
-      }) as OpenAI.Chat.Completions.ChatCompletion;
-
-        const aiResponse = completion.choices[0].message.content?.trim() || "Sorry, I couldn't generate a response.";
-
-        // Store message in memory storage (optional)
-        // Actually store both the request and response if needed
-
+        // Get response from OpenAI using our service
+        const aiResponse = await getChatResponse(body.content);
+        
         return res.json({ 
           role: "assistant", 
           content: aiResponse 

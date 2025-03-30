@@ -1,30 +1,52 @@
-import * as React from 'react';
-import { Switch, Route } from "wouter";
+import { useState, useEffect, createContext, useContext } from "react";
+import { ThemeProvider } from "./components/theme-provider";
+import { Route, Switch } from "wouter";
+import WelcomePage from "./pages/welcome-page";
+import ChatPage from "./pages/chat-page";
 import NotFound from "./pages/not-found";
-import { Button } from './components/ui/button';
-import { ThemeToggle } from './components/ui/theme-toggle';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from "./components/ui/toaster";
 
-// Simplified welcome component
-function SimpleWelcome() {
+// Create a QueryClient instance
+const queryClient = new QueryClient();
+
+// Create a context for navigation
+interface NavigationContextType {
+  currentPage: string;
+  navigateTo: (page: string) => void;
+}
+
+export const NavigationContext = createContext<NavigationContextType>({
+  currentPage: "welcome",
+  navigateTo: () => {},
+});
+
+function App() {
+  // Navigation state
+  const [currentPage, setCurrentPage] = useState("welcome");
+  
+  // Provide context values
+  const navigationValue = { 
+    currentPage, 
+    navigateTo: (page: string) => setCurrentPage(page)
+  };
+  
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <h1 className="text-3xl font-bold mb-6">TTwW Answerbot</h1>
-      <p className="text-lg mb-6 text-center max-w-md">
-        Your friendly assistant designed to help explain technology in a clear, easy-to-understand way.
-      </p>
-      <div className="flex items-center gap-4">
-        <Button>Get Started</Button>
-        <ThemeToggle />
-      </div>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="system" storageKey="ttw-theme">
+        <NavigationContext.Provider value={navigationValue}>
+          <main className="min-h-screen bg-background">
+            <Switch>
+              <Route path="/" component={WelcomePage} />
+              <Route path="/chat" component={ChatPage} />
+              <Route component={NotFound} />
+            </Switch>
+          </main>
+          <Toaster />
+        </NavigationContext.Provider>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
-export default function App() {
-  return (
-    <Switch>
-      <Route path="/" component={SimpleWelcome} />
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+export default App;
