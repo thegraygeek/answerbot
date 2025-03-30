@@ -30,7 +30,7 @@ export default function Welcome() {
   useEffect(() => {
     // Check auth status first
     apiRequest('/api/auth/status').then(status => {
-      if (status.isLoggedIn) {
+      if (status.isLoggedIn && window.location.pathname !== '/welcome') {
         navigate('/chat');
         return;
       }

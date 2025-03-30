@@ -55,9 +55,9 @@ export function usePwa() {
       // Store the event for later use
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // Show prompt immediately if the user interacts with the app
+      // Show prompt immediately if user interacts with app and not on welcome page
       // or based on the time threshold logic
-      if (forceShow || shouldShowPrompt()) {
+      if ((forceShow || shouldShowPrompt()) && window.location.pathname !== '/welcome') {
         setShowInstallPrompt(true);
         localStorage.setItem(INSTALL_PROMPT_LAST_SHOWN_KEY, Date.now().toString());
       }
