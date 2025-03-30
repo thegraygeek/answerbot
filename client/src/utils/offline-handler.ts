@@ -56,16 +56,18 @@ async function syncPendingRequests() {
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        const timeoutId = setTimeout(() => controller.abort(), request.retryCount > 0 ? 10000 : 5000);
 
         const response = await fetch(request.url, {
           method: request.method,
           body: request.body ? JSON.stringify(request.body) : undefined,
           headers: {
             'Content-Type': 'application/json',
-            'X-Retry-Count': request.retryCount.toString()
+            'X-Retry-Count': request.retryCount.toString(),
+            'X-Request-ID': `${Date.now()}-${Math.random().toString(36).slice(2)}`
           },
-          signal: controller.signal
+          signal: controller.signal,
+          credentials: 'same-origin'
         });
 
         clearTimeout(timeoutId);
