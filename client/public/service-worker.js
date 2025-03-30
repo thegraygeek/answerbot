@@ -1,5 +1,11 @@
-const CACHE_NAME = 'ttw-cache-v2';
-const RUNTIME_CACHE = 'ttw-runtime-v2';
+const CACHE_NAME = 'ttw-cache-v3';
+const RUNTIME_CACHE = 'ttw-runtime-v3';
+const STATIC_RESOURCES = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico'
+];
 const urlsToCache = [
   '/',
   '/index.html',

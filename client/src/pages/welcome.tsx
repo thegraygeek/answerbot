@@ -28,9 +28,11 @@ export default function Welcome() {
 
   // Try to load saved form data from localStorage on component mount
   useEffect(() => {
+    // Check if we're in PWA mode
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
     // Check auth status first
     apiRequest('/api/auth/status').then(status => {
-      if (status.isLoggedIn && window.location.pathname !== '/welcome') {
+      if (status.isLoggedIn && (!isPWA || window.location.pathname !== '/welcome')) {
         navigate('/chat');
         return;
       }
