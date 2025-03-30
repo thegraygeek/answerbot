@@ -1,6 +1,5 @@
-
 import { create } from 'zustand';
-import { queryClient } from '@/lib/query-client';
+import { queryClient } from '../lib/query';
 
 interface OfflineStore {
   isOnline: boolean;
@@ -22,8 +21,10 @@ interface OfflineStore {
 
 export const useOfflineStore = create<OfflineStore>((set) => ({
   isOnline: navigator.onLine,
+  syncInProgress: false,
   pendingRequests: [],
   setOnline: (status) => set({ isOnline: status }),
+  setSyncStatus: (inProgress) => set({ syncInProgress: inProgress }),
   addPendingRequest: (request) => 
     set((state) => ({ 
       pendingRequests: [...state.pendingRequests, { 
@@ -38,27 +39,13 @@ export const useOfflineStore = create<OfflineStore>((set) => ({
     }))
 }));
 
-export function initializeOfflineHandler() {
-  const store = useOfflineStore.getState();
-
-  window.addEventListener('online', () => {
-    store.setOnline(true);
-    queryClient.invalidateQueries();
-    syncPendingRequests();
-  });
-
-  window.addEventListener('offline', () => {
-    store.setOnline(false);
-  });
-}
-
 async function syncPendingRequests() {
   const store = useOfflineStore.getState();
   if (store.syncInProgress) return;
-  
+
   store.setSyncStatus(true);
   const requests = [...store.pendingRequests];
-  
+
   try {
     for (const request of requests) {
       if (request.retryCount >= 3) {
@@ -94,23 +81,17 @@ async function syncPendingRequests() {
     store.lastSyncTime = Date.now();
   }
 }
-        method: request.method,
-        body: request.body ? JSON.stringify(request.body) : undefined,
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-Retry-Count': request.retryCount.toString()
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+export function initializeOfflineHandler() {
+  const store = useOfflineStore.getState();
 
-      store.removePendingRequest(request.url);
-      queryClient.invalidateQueries();
-    } catch (error) {
-      console.error('Failed to sync request:', error);
-      request.retryCount++;
-    }
-  }
+  window.addEventListener('online', () => {
+    store.setOnline(true);
+    queryClient.invalidateQueries();
+    syncPendingRequests();
+  });
+
+  window.addEventListener('offline', () => {
+    store.setOnline(false);
+  });
 }

@@ -1,8 +1,7 @@
-
 // Cache version control
-const CACHE_VERSION = 'v1';
-const STATIC_CACHE = `static-cache-${CACHE_VERSION}`;
-const DYNAMIC_CACHE = `dynamic-cache-${CACHE_VERSION}`;
+const CACHE_VERSION = '2';
+const STATIC_CACHE = `static-cache-v${CACHE_VERSION}`;
+const DYNAMIC_CACHE = `dynamic-cache-v${CACHE_VERSION}`;
 const API_CACHE = `api-cache-${CACHE_VERSION}`;
 
 const STATIC_RESOURCES = [
@@ -22,7 +21,7 @@ async function networkFirstWithTimeout(request, cacheName, timeout = 3000) {
     });
     const networkPromise = fetch(request);
     const response = await Promise.race([networkPromise, timeoutPromise]);
-    
+
     if (response.ok) {
       const cache = await caches.open(cacheName);
       await cache.put(request, response.clone());
@@ -44,7 +43,7 @@ async function cacheFirst(request, cacheName) {
   if (cachedResponse) {
     return cachedResponse;
   }
-  
+
   try {
     const response = await fetch(request);
     if (response.ok) {
@@ -154,7 +153,7 @@ async function syncPendingRequests() {
   const cache = await caches.open(API_CACHE);
   const requests = await cache.keys();
   const failedRequests = [];
-  
+
   for (const request of requests) {
     try {
       const response = await fetch(request.clone());
@@ -178,7 +177,7 @@ async function syncPendingRequests() {
   if (failedRequests.length > 0) {
     console.warn('Failed requests during sync:', failedRequests);
   }
-  
+
   return failedRequests;
 }
 
