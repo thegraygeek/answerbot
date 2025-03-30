@@ -1,68 +1,51 @@
-
-const CACHE_NAME = 'ttw-cache-v13';
-const RUNTIME_CACHE = 'ttw-runtime-v13';
-
-// Essential static resources that need to be cached
+// Cache names
+const CACHE_NAME = 'ttw-cache-v1';
+const RUNTIME_CACHE = 'runtime-cache';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
   '/offline.html',
   '/manifest.json',
-  '/favicon.ico',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
 ];
 
-// Cache expiration duration (24 hours)
-const CACHE_EXPIRATION = 24 * 60 * 60 * 1000;
-
-// Install event handler
+// Install event
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Caching static resources');
-        return cache.addAll(STATIC_RESOURCES);
-      })
+      .then(cache => cache.addAll(STATIC_RESOURCES))
       .then(() => self.skipWaiting())
-      .catch(error => {
-        console.error('Cache installation failed:', error);
-      })
+      .catch(error => console.error('Cache installation failed:', error))
   );
 });
 
-// Activate event handler
+// Activate event
 self.addEventListener('activate', event => {
   event.waitUntil(
     Promise.all([
-      // Clean old caches
       caches.keys()
         .then(cacheNames => {
           return Promise.all(
             cacheNames.map(cacheName => {
               if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-                console.log('Deleting old cache:', cacheName);
                 return caches.delete(cacheName);
               }
             })
           );
         }),
-      // Clean expired items from runtime cache
-      cleanExpiredCache(),
-      // Take control of all clients
       clients.claim()
     ])
   );
 });
 
-// Fetch event handler
+// Fetch event
 self.addEventListener('fetch', event => {
-  // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // Handle API requests
+  // API requests
   if (event.request.url.includes('/api/')) {
     event.respondWith(
       fetch(event.request)
@@ -78,7 +61,8 @@ self.addEventListener('fetch', event => {
             JSON.stringify({
               error: navigator.onLine ? 'Service unavailable' : 'You are offline',
               status: 'error'
-            }), {
+            }),
+            {
               status: navigator.onLine ? 500 : 503,
               headers: {
                 'Content-Type': 'application/json',
@@ -91,29 +75,16 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Handle navigation requests
+  // HTML navigation
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Navigation request failed');
-          }
-          return caches.open(RUNTIME_CACHE)
-            .then(cache => {
-              cache.put(event.request, response.clone());
-              return response;
-            });
-        })
-        .catch(() => {
-          return caches.match(event.request)
-            .then(response => response || caches.match('/offline.html'));
-        })
+        .catch(() => caches.match('/offline.html'))
     );
     return;
   }
 
-  // Handle static assets
+  // Other static resources
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
@@ -121,57 +92,27 @@ self.addEventListener('fetch', event => {
           return cachedResponse;
         }
 
-        return fetch(event.request)
-          .then(response => {
-            // Cache successful responses
-            if (response.ok && response.type === 'basic') {
-              const responseToCache = response.clone();
-              caches.open(RUNTIME_CACHE)
-                .then(cache => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-            return response;
-          })
-          .catch(() => {
-            // Return empty response for images, offline page for other resources
-            if (event.request.destination === 'image') {
-              return new Response();
-            }
-            return caches.match('/offline.html');
+        return caches.open(RUNTIME_CACHE)
+          .then(cache => {
+            return fetch(event.request)
+              .then(response => {
+                if (!response || response.status !== 200 || response.type !== 'basic') {
+                  return response;
+                }
+
+                cache.put(event.request, response.clone());
+                return response;
+              });
           });
       })
   );
 });
 
-// Clean expired cache items
-async function cleanExpiredCache() {
-  const now = Date.now();
-  const cache = await caches.open(RUNTIME_CACHE);
-  const requests = await cache.keys();
-  
-  return Promise.all(
-    requests.map(async request => {
-      const response = await cache.match(request);
-      if (response) {
-        const dateHeader = response.headers.get('date');
-        if (dateHeader) {
-          const date = new Date(dateHeader).getTime();
-          if (now - date > CACHE_EXPIRATION) {
-            return cache.delete(request);
-          }
-        }
-      }
-    })
-  );
-}
-
 // Handle errors
 self.addEventListener('error', event => {
-  console.error('Service Worker error:', event.error);
+  console.error('Service worker error:', event.error);
 });
 
-// Handle unhandled promise rejections
 self.addEventListener('unhandledrejection', event => {
-  console.error('Service Worker unhandled rejection:', event.reason);
+  console.error('Unhandled promise rejection:', event.reason);
 });
