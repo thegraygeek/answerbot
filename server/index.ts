@@ -65,9 +65,14 @@ app.use((req, res, next) => {
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
-
+    
+    console.error(`[${new Date().toISOString()}] Error:`, err);
     res.status(status).json({ message });
-    throw err;
+    
+    // Don't throw after handling
+    if (process.env.NODE_ENV === 'development') {
+      console.error(err.stack);
+    }
   });
 
   // importantly only setup vite in development and after
