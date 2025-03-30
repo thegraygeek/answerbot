@@ -1,6 +1,6 @@
 
-const CACHE_NAME = 'ttw-cache-v6';
-const RUNTIME_CACHE = 'ttw-runtime-v6';
+const CACHE_NAME = 'ttw-cache-v7';
+const RUNTIME_CACHE = 'ttw-runtime-v7';
 const STATIC_RESOURCES = [
   '/',
   '/index.html',
@@ -23,23 +23,38 @@ self.addEventListener('install', event => {
   );
 });
 
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
 self.addEventListener('fetch', event => {
   if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // Special handling for API requests
   if (event.request.url.includes('/api/')) {
     return event.respondWith(
       fetch(event.request)
         .catch(() => {
           return caches.match('/offline.html') ||
-            new Response('Network error occurred', { status: 503 });
+            new Response(JSON.stringify({ error: 'You are offline' }), {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            });
         })
     );
   }
 
-  // Network first strategy for welcome page
   if (event.request.url.includes('/welcome')) {
     return event.respondWith(
       fetch(event.request)
@@ -47,7 +62,6 @@ self.addEventListener('fetch', event => {
     );
   }
 
-  // Cache first strategy for static resources
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -70,23 +84,8 @@ self.addEventListener('fetch', event => {
             return response;
           })
           .catch(() => {
-            return caches.match('/offline.html') ||
-              new Response('Network error occurred', { status: 503 });
+            return caches.match('/offline.html');
           });
       })
-  );
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
   );
 });
