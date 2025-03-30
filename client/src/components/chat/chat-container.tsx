@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
 import ChatMessage from "./chat-message";
 import TypingIndicator from "./typing-indicator";
-import { Message } from "@shared/schema";
+import { Message } from "../../../shared/schema";
 
 interface ChatContainerProps {
   messages: Message[];

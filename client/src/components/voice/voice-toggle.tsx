@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { useVoiceContext } from "@/hooks/use-voice-context";
+import { Button } from "../../components/ui/button";
+import { useVoiceContext } from "../../hooks/use-voice-context";
 import { Mic, MicOff, Volume2, VolumeX, Headphones } from "lucide-react";
 import { 
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "../../components/ui/tooltip";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +14,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
-import { Slider } from "@/components/ui/slider";
+} from "../../components/ui/dropdown-menu";
+import { Slider } from "../../components/ui/slider";
 import { useState } from "react";
 
 export function VoiceToggle() {
@@ -45,7 +45,7 @@ export function VoiceToggle() {
   );
 
   return (
-    <div className="flex items-center space-x-2">
+    <div className="flex items-center space-x-2 sm:space-x-3">
       {/* Voice input toggle button */}
       {hasRecognitionSupport ? (
         <TooltipProvider>
@@ -54,7 +54,7 @@ export function VoiceToggle() {
               <Button
                 variant="outline"
                 size="icon"
-                className={`p-2 rounded-full ${
+                className={`p-2 sm:p-3 rounded-full shadow-sm ${
                   isListeningEnabled ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700'
                 }`}
                 onClick={toggleListening}
@@ -62,9 +62,9 @@ export function VoiceToggle() {
                 aria-label={isListeningEnabled ? "Disable voice input" : "Enable voice input"}
               >
                 {isListeningEnabled ? (
-                  <Mic className="h-4 w-4" />
+                  <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                  <MicOff className="h-4 w-4" />
+                  <MicOff className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -83,7 +83,7 @@ export function VoiceToggle() {
               <Button
                 variant="outline"
                 size="icon"
-                className={`p-2 rounded-full ${
+                className={`p-2 sm:p-3 rounded-full shadow-sm ${
                   isSpeechEnabled ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-gray-700'
                 }`}
                 onClick={toggleSpeech}
@@ -91,9 +91,9 @@ export function VoiceToggle() {
                 aria-label={isSpeechEnabled ? "Disable text-to-speech" : "Enable text-to-speech"}
               >
                 {isSpeechEnabled ? (
-                  <Volume2 className="h-4 w-4" />
+                  <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 ) : (
-                  <VolumeX className="h-4 w-4" />
+                  <VolumeX className="h-4 w-4 sm:h-5 sm:w-5" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -117,10 +117,10 @@ export function VoiceToggle() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="p-2 rounded-full bg-gray-100 dark:bg-gray-700"
+                    className="p-2 sm:p-3 rounded-full shadow-sm bg-gray-100 dark:bg-gray-700"
                     aria-label="Voice settings"
                   >
-                    <Headphones className="h-4 w-4" />
+                    <Headphones className="h-4 w-4 sm:h-5 sm:w-5" />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
@@ -130,7 +130,7 @@ export function VoiceToggle() {
             </Tooltip>
           </TooltipProvider>
           
-          <DropdownMenuContent className="w-56">
+          <DropdownMenuContent className="w-56 sm:w-64 max-w-[calc(100vw-20px)]">
             <DropdownMenuLabel>Voice Settings</DropdownMenuLabel>
             <DropdownMenuSeparator />
             

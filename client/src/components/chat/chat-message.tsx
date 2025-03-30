@@ -1,8 +1,8 @@
 import { useMemo, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import { Bot, User, Volume, VolumeX } from "lucide-react";
-import { useVoiceContext } from "@/hooks/use-voice-context";
-import { Button } from "@/components/ui/button";
+import { useVoiceContext } from "../../hooks/use-voice-context";
+import { Button } from "../../components/ui/button";
 
 interface ChatMessageProps {
   role: 'user' | 'assistant';
@@ -70,18 +70,18 @@ export default function ChatMessage({ role, content }: ChatMessageProps) {
             
             {/* Text-to-speech button for assistant messages */}
             {hasSpeechSupport && !isUser && (
-              <div className="absolute top-1 right-1">
+              <div className="absolute top-1 sm:top-2 right-1 sm:right-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 rounded-full opacity-70 hover:opacity-100 bg-transparent text-gray-500 dark:text-gray-400"
+                  className="h-6 w-6 sm:h-8 sm:w-8 rounded-full opacity-70 hover:opacity-100 bg-transparent text-gray-500 dark:text-gray-400"
                   onClick={handleSpeak}
                   aria-label="Read message aloud"
                 >
                   {isSpeaking ? (
-                    <VolumeX className="h-3.5 w-3.5" />
+                    <VolumeX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   ) : (
-                    <Volume className="h-3.5 w-3.5" />
+                    <Volume className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   )}
                 </Button>
               </div>
