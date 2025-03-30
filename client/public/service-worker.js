@@ -153,17 +153,33 @@ self.addEventListener('sync', event => {
 async function syncPendingRequests() {
   const cache = await caches.open(API_CACHE);
   const requests = await cache.keys();
+  const failedRequests = [];
   
   for (const request of requests) {
     try {
-      const response = await fetch(request);
+      const response = await fetch(request.clone());
       if (response.ok) {
         await cache.delete(request);
+      } else {
+        failedRequests.push({
+          url: request.url,
+          status: response.status
+        });
       }
     } catch (error) {
       console.error('Failed to sync request:', error);
+      failedRequests.push({
+        url: request.url,
+        error: error.message
+      });
     }
   }
+
+  if (failedRequests.length > 0) {
+    console.warn('Failed requests during sync:', failedRequests);
+  }
+  
+  return failedRequests;
 }
 
 // Error handling

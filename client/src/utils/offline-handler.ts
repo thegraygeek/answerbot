@@ -67,8 +67,33 @@ async function syncPendingRequests() {
         continue;
       }
 
-    try {
-      const response = await fetch(request.url, {
+      try {
+        const response = await fetch(request.url, {
+          method: request.method,
+          body: request.body ? JSON.stringify(request.body) : undefined,
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-Retry-Count': request.retryCount.toString()
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        store.removePendingRequest(request.url);
+        queryClient.invalidateQueries();
+      } catch (error) {
+        console.error('Failed to sync request:', error);
+        request.retryCount++;
+        request.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+    }
+  } finally {
+    store.setSyncStatus(false);
+    store.lastSyncTime = Date.now();
+  }
+}
         method: request.method,
         body: request.body ? JSON.stringify(request.body) : undefined,
         headers: { 
